@@ -3,10 +3,15 @@ import re
 import nltk
 from sklearn.datasets import  load_files
 nltk.download('stopwords')
+nltk.download('wordnet')
 import  pickle
 from nltk.corpus import stopwords
 
-movie_data = load_files(r"D:\txt_sentoken")
+
+
+
+
+movie_data = load_files(r"/Users/olgunerguzel/Repository/erguzel/python_workspaces/motionlogic-challenge/ai-studio/data/raw/bbc 4/")
 X, y = movie_data.data, movie_data.target
 
 documents = []
@@ -45,18 +50,20 @@ for sen in range(0, len(X)):
 
 from sklearn.feature_extraction.text import CountVectorizer
 vectorizer = CountVectorizer(max_features=1500, min_df=5, max_df=0.7, stop_words=stopwords.words('english'))
-X = vectorizer.fit_transform(documents).toarray()
+countVectorized = vectorizer.fit_transform(documents).toarray()
 
 from sklearn.feature_extraction.text import TfidfTransformer
 tfidfconverter = TfidfTransformer()
-X = tfidfconverter.fit_transform(X).toarray()
+tfidTransformed = tfidfconverter.fit_transform(countVectorized).toarray()
 
-from sklearn.feature_extraction.text import TfidfVectorizer
-tfidfconverter = TfidfVectorizer(max_features=1500, min_df=5, max_df=0.7, stop_words=stopwords.words('english'))
-X = tfidfconverter.fit_transform(documents).toarray()
+
+## alternative need search
+#from sklearn.feature_extraction.text import TfidfVectorizer
+#tfidfconverter = TfidfVectorizer(max_features=1500, min_df=5, max_df=0.7, stop_words=stopwords.words('english'))
+#X = tfidfconverter.fit_transform(documents).toarray()
 
 from sklearn.model_selection import train_test_split
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(tfidTransformed, y, test_size=0.2, random_state=0)
 
 from sklearn.ensemble import RandomForestClassifier
 
@@ -64,3 +71,11 @@ classifier = RandomForestClassifier(n_estimators=1000, random_state=0)
 classifier.fit(X_train, y_train)
 
 y_pred = classifier.predict(X_test)
+
+
+from sklearn.metrics import classification_report
+target_names = ['business', 'entertainment', 'politics','sport','tech']
+print(classification_report(y_test, y_pred, target_names=target_names))
+
+print(document(1780))
+print()
