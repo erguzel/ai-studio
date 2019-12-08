@@ -5,6 +5,7 @@ def create_multiclassifier_data(
     targetPath,
     inputExtension,
     outputExtension,
+    outputFolderName,
     separator,
     withHeader
 ):
@@ -38,6 +39,8 @@ def create_multiclassifier_data(
                     processedDataList += csvLine + '\n'
                     index = index + 1
 
+    if len(outputFolderName)> 0:
+        fileName = outputFolderName;
     outPath = os.path.join(targetPath, fileName)
     saveFile = "{0}.{1}".format(outPath, outputExtension)
     open(saveFile, "w").write(processedDataList)
