@@ -14,6 +14,12 @@ from nltk.corpus import stopwords
 movie_data = load_files(r"/Users/olgunerguzel/Repository/erguzel/python_workspaces/motionlogic-challenge/ai-studio/data/raw/bbc 4/")
 X, y = movie_data.data, movie_data.target
 
+
+from sklearn.model_selection import train_test_split
+X_trainData, X_testData, y_trainData, y_testData = train_test_split(X, y, test_size=0.2, random_state=0)
+
+
+
 documents = []
 
 from nltk.stem import WordNetLemmatizer
@@ -77,5 +83,9 @@ from sklearn.metrics import classification_report
 target_names = ['business', 'entertainment', 'politics','sport','tech']
 print(classification_report(y_test, y_pred, target_names=target_names))
 
-print(document(1780))
-print()
+print(X_testData[0])
+print(y_pred[0])
+
+print("-------------------------------------------")
+print(X_testData[1])
+print(y_pred[1])

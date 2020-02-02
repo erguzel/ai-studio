@@ -36,7 +36,7 @@ def create_multiclassifier_data(
                         addedHeader = True
 
                 if (not csvLine in processedDataList):
-                    processedDataList += csvLine + '\n'
+                    processedDataList += csvLine + ';;'
                     index = index + 1
 
     if len(outputFolderName)> 0:
