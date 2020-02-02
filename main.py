@@ -11,7 +11,7 @@ from nltk.corpus import stopwords
 
 
 
-movie_data = load_files(r"/Users/olgunerguzel/Repository/erguzel/python_workspaces/motionlogic-challenge/ai-studio/data/raw/bbc 4/")
+movie_data = load_files(r"/Users/olgunerguzel/Workspaces/ai-studio/data/raw/bbc 4/")
 X, y = movie_data.data, movie_data.target
 
 
