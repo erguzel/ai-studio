@@ -11,7 +11,7 @@ from nltk.corpus import stopwords
 
 
 
-movie_data = load_files(r"./data/raw/bbc 4/")
+movie_data = load_files(r"data/raw/bbc4/")
 X, y = movie_data.data, movie_data.target
 
 
