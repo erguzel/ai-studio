@@ -1,6 +1,6 @@
 import os,re,codecs
 
-def create_multiclassifier_data(
+def merge_folder_labelled_text(
     inputPath,
     targetPath,
     inputExtension,
