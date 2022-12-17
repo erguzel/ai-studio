@@ -1,0 +1,2 @@
+exc-help @ git+ssh://git@github.com/erguzel/exc-help.git@7ffe14d12a592a966ad46a349886f874b598fe38
+numpy>=1.23.5
