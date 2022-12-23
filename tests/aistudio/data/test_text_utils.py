@@ -32,12 +32,12 @@ def test_clear_default_chars():
     #
 from nltk.stem import WordNetLemmatizer, LancasterStemmer
 def test_stemming_lematization():
-    data = np.array([
+    data = [
         'some data without any sign',
         'special character data',
         'multiple spaces data',
         'some capital letters and spaces with p3c ch ct3rs data'
-    ])
+    ]
     
     # Case1
     
@@ -63,3 +63,5 @@ def test_stemming_lematization():
     assert len(actual) == len(expected)
     assert all([a==b for a,b in zip(actual,expected)])
     
+
+test_stemming_lematization()
