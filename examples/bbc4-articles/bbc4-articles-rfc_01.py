@@ -5,7 +5,8 @@ import nltk
 nltk.download('stopwords')
 nltk.download('wordnet')
 from aistudio.model.model_utils import persist_ml_model
-from exchelp.exception_helper import ReportObject, CoreException, object_from_module
+from exchelp.exception_helper import ReportObject, CoreException
+from aistudio.data.meta.module_utils import object_from_module
 
 
 #
@@ -60,7 +61,7 @@ main_report = ReportObject().adddata('_title_',os.path.basename(__file__)).\
             adddata('module','sklearn.ensemble').
             adddata('object','RandomForestClassifier').\
             adddata('hyper_params',ReportObject().\
-                adddata('n_estimators',10000).\
+                adddata('n_estimators',1000).\
                 adddata('random_state',0)
             )
         )
