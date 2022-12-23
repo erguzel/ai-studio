@@ -1,6 +1,10 @@
 # special files
-
+models/
+assets/
+*.report.html
 *.test-array.csv
+*array-indexing.ipynb
+tutorials/
 
 
 # Byte-compiled / optimized / DLL files
