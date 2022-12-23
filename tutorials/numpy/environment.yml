@@ -1,9 +1,0 @@
-name: ai-studio-env
-channels:
-  - defaults
-dependencies:
-  - pip
-  - pip:
-    - exc-help @ git+ssh://git@github.com/erguzel/exc-help.git # requires private key
-    - numpy==1.23.5
-prefix: ./.convenv
