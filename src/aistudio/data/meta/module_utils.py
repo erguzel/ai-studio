@@ -1,5 +1,15 @@
 from importlib import import_module
-from exchelp.exception_helper import CoreException
+from exchelp.exception_helper import CoverException
+
+
+class ModuleMeta:
+    def __init__(self,moduleName:str,objectName:str,subObjectName:str=None) -> None:
+        self.modulename = moduleName
+        self.objectName = objectName
+        self.subobjectName = subObjectName
+        self.caller = object_from_module(moduleName=self.modulename,objectName=self.objectName,subObjectName=self.subobjectName)
+        
+       
 
 def object_from_module(moduleName:str,objectName:str,subObjectName:str=None):
     """Creates an instantiable meata-object of given module and object names combination
@@ -18,4 +28,4 @@ def object_from_module(moduleName:str,objectName:str,subObjectName:str=None):
             result_ = getattr(result_,subObjectName)
         return result_
     except Exception as e:
-        CoreException('object_from_module failed',e,dontThrow=True,logIt=True,shouldExit=True).adddata('locals',locals()).act()
+        CoverException('object_from_module failed',e,dontThrow=True,logIt=True,shouldExit=True).adddata('locals',locals()).act()
