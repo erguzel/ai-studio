@@ -2,3 +2,4 @@ exc-help @ git+ssh://git@github.com/erguzel/exc-help.git # requires private key
 nltk==3.8
 numpy==1.23.5
 scikit-learn==1.2.0
+ai-studio @ .
