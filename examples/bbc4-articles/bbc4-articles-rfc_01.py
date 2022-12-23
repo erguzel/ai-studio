@@ -5,8 +5,8 @@ import nltk
 nltk.download('stopwords')
 nltk.download('wordnet')
 from aistudio.model.model_utils import persist_ml_model
-from exchelp.exception_helper import ReportObject, CoreException
-from aistudio.data.meta.module_utils import object_from_module
+from exchelp.exception_helper import ReportObject, CoverException
+from aistudio.data.meta.module_utils import ModuleMeta,object_from_module
 
 
 #
@@ -61,7 +61,7 @@ main_report = ReportObject().adddata('_title_',os.path.basename(__file__)).\
             adddata('module','sklearn.ensemble').
             adddata('object','RandomForestClassifier').\
             adddata('hyper_params',ReportObject().\
-                adddata('n_estimators',1000).\
+                adddata('n_estimators',500).\
                 adddata('random_state',0)
             )
         )
@@ -77,7 +77,8 @@ data_source = main_report.getdata('initialize_info')['source']
 try:
     movie_data = load_files(data_source)
 except Exception as e:
-    CoreException('data load failed',e,logIt=True,dontThrow=True,shouldExit=True).act()
+    CoverException('data load failed',e,logIt=True,dontThrow=True,shouldExit=True).act()
+    
 X, y = np.array(movie_data.data), np.array(movie_data.target)
 
 main_report.getdata('initialize_info')['raw_number']=len(X)
@@ -87,41 +88,64 @@ main_report.getdata('initialize_info')['raw_number']=len(X)
 #
 
 #char cleaning
-moduleName = main_report.getdata('cleanse_info')['char_cleaner_function']['module']
-objectName = main_report.getdata('cleanse_info')['char_cleaner_function']['object']
-docs = object_from_module(moduleName=moduleName,objectName=objectName)(data=X)
+  
+  
+caller = ModuleMeta(
+moduleName=main_report.getdata('cleanse_info')['char_cleaner_function']['module'],
+objectName = main_report.getdata('cleanse_info')['char_cleaner_function']['object']).caller
+
+docs = caller(data=X)
+#moduleName = main_report.getdata('cleanse_info')['char_cleaner_function']['module']
+#objectName = main_report.getdata('cleanse_info')['char_cleaner_function']['object']
+
+
+#docs = object_from_module(moduleName=moduleName,objectName=objectName)()
 
 #stemming-lemmatization cleaning
-moduleName = main_report.getdata('cleanse_info')['stemmer_or_lemmatizer_instance']['module']
-objectName = main_report.getdata('cleanse_info')['stemmer_or_lemmatizer_instance']['object']
-stem_or_lemmatizer_instance = object_from_module(moduleName=moduleName,objectName=objectName)()
 
-moduleName = main_report.getdata('cleanse_info')['stemming_lemmatization_function']['module']
-objectName = main_report.getdata('cleanse_info')['stemming_lemmatization_function']['object']
-docs = object_from_module(moduleName=moduleName,objectName=objectName)(stem_or_lemmatizer=stem_or_lemmatizer_instance,data=X)
+stem_or_lemmatizer_instance = ModuleMeta(main_report.getdata('cleanse_info')['stemmer_or_lemmatizer_instance']['module'],main_report.getdata('cleanse_info')['stemmer_or_lemmatizer_instance']['object']).caller()
+
+#stem_or_lemmatizer_instance = object_from_module(moduleName=moduleName,objectName=objectName)()
+
+stemming_lemmatization_function = ModuleMeta(
+moduleName = main_report.getdata('cleanse_info')['stemming_lemmatization_function']['module'],
+objectName = main_report.getdata('cleanse_info')['stemming_lemmatization_function']['object']).caller
+
+docs = stemming_lemmatization_function(stem_or_lemmatizer=stem_or_lemmatizer_instance,data=X)
 
 #
 # Prepare
 #
 
 #   stopwords
-moduleName = main_report.getdata('prepare_info')['vectorizer_instance']['stop_words_function']['module']
-objectName = main_report.getdata('prepare_info')['vectorizer_instance']['stop_words_function']['object']
-subObjectName = main_report.getdata('prepare_info')['vectorizer_instance']['stop_words_function']['subObject']
 stop_words_language = main_report.getdata('prepare_info')['vectorizer_instance']['language']
-stop_words = object_from_module(moduleName=moduleName,objectName=objectName,subObjectName=subObjectName)(stop_words_language)
+
+stop_words_function = ModuleMeta(
+moduleName = main_report.getdata('prepare_info')['vectorizer_instance']['stop_words_function']['module'],
+objectName = main_report.getdata('prepare_info')['vectorizer_instance']['stop_words_function']['object'],
+subObjectName = main_report.getdata('prepare_info')['vectorizer_instance']['stop_words_function']['subObject']
+).caller
+
+
+stop_words = stop_words_function(stop_words_language)
 
 #   vectorizer
 vectorizer_instance_params = main_report.getdata('prepare_info')['vectorizer_instance']['hyper_params']
-moduleName = main_report.getdata('prepare_info')['vectorizer_instance']['module']
+
+vectorizer_instance = ModuleMeta(
+moduleName = main_report.getdata('prepare_info')['vectorizer_instance']['module'],
 objectName = main_report.getdata('prepare_info')['vectorizer_instance']['object']
-vectorizer_instance = object_from_module(moduleName,objectName)(**vectorizer_instance_params,stop_words = stop_words)
+).caller
+
+vectorizer_instance = vectorizer_instance(**vectorizer_instance_params,stop_words = stop_words)
 vectorized_count = vectorizer_instance.fit_transform(docs).toarray()
 
 #   transformer
-moduleName = main_report.getdata('prepare_info')['transformer_instance']['module']
+transformer_instance = ModuleMeta(
+moduleName = main_report.getdata('prepare_info')['transformer_instance']['module'],
 objectName = main_report.getdata('prepare_info')['transformer_instance']['object']
-transformer_instance = object_from_module(moduleName=moduleName,objectName=objectName)()
+).caller()
+
 transformed_vector = transformer_instance.fit_transform(vectorized_count).toarray()
 
 test_size = objectName = main_report.getdata('prepare_info')['test_size']
@@ -133,10 +157,14 @@ X_train, X_test, y_train, y_test = train_test_split(transformed_vector, y, test_
 #
 # Execute
 #
-moduleName = main_report.getdata('execute_info')['model_instance']['module']
-objectName = main_report.getdata('execute_info')['model_instance']['object']
 model_instance_parameters = main_report.getdata('execute_info')['model_instance']['hyper_params']
-model_instance = object_from_module(moduleName=moduleName,objectName=objectName)(**model_instance_parameters)
+
+model_instance = ModuleMeta(
+moduleName = main_report.getdata('execute_info')['model_instance']['module'],
+objectName = main_report.getdata('execute_info')['model_instance']['object']
+).caller
+
+model_instance = model_instance(**model_instance_parameters)
 model_instance.fit(X_train, y_train)
 
 #
