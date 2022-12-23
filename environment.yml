@@ -5,4 +5,9 @@ dependencies:
   - pip
   - pip:
     - exc-help @ git+ssh://git@github.com/erguzel/exc-help.git # requires private key
+    - pytest
+    - pytest-html
+    - joblib
+    - nltk
+    - scikit-learn
 prefix: ./.convenv
