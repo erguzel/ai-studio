@@ -1,7 +1,7 @@
 import re as re
 import numpy as np
 from nltk.stem import WordNetLemmatizer, StemmerI
-from exchelp.exception_helper import TypeCheckMode,TypeMismatchException,CoreException,check_type
+from exchelp.exception_helper import *
 import os
 
 
@@ -79,13 +79,13 @@ def stemming_lematization(stem_or_lemmatizer:WordNetLemmatizer|StemmerI,data : n
         
         correctkDataType:bool = check_type(data,np.ndarray,TypeCheckMode.SUBTYPE) 
         if(not correctkDataType):
-            TypeMismatchException('Data has to be a ndarray').act()
+            raise CoreException(f'Data has to be a ndarray not {data.__class__.__name__}')
 
         correctStemmerLemmatizerDataType:bool = check_type(stem_or_lemmatizer,StemmerI,TypeCheckMode.SUBTYPE) or \
         check_type(stem_or_lemmatizer,WordNetLemmatizer,TypeCheckMode.TYPE)
         
         if(not correctStemmerLemmatizerDataType):
-            TypeMismatchException('Stemmer or lemmatizer has to be StemmerI or WordnetLemmatizer').act()
+            raise CoreException(f'Stemmer or lemmatizer has to be StemmerI or WordnetLemmatizer not {stem_or_lemmatizer.__class__.__name__}')
 
 
         if(check_type(stem_or_lemmatizer,WordNetLemmatizer,TypeCheckMode.TYPE)):
@@ -97,10 +97,10 @@ def stemming_lematization(stem_or_lemmatizer:WordNetLemmatizer|StemmerI,data : n
         act = np.vectorize(action)
         data = act(data)
 
-        return data;
+        return data
         
     except Exception as e:
-        CoreException('Function execution failed',e,logIt=True,dontThrow=True,shouldExit=True).act()
+        CoverException('stemming_lematization function execution failed',e,logIt=True,dontThrow=True,shouldExit=True).adddata('local',locals()).act()
         #
         #
         #
@@ -119,7 +119,7 @@ def clear_default_chars(
     """
     try:
         if not check_type(data,np.ndarray,TypeCheckMode.SUBTYPE):
-            TypeMismatchException('data must be np.ndarray',e).act()
+            raise CoreException(f'data must be np.ndarray not {data.__class__.__name__}')
         #remove special characters
         removeSpecials = lambda k : re.sub(r'\W', ' ', str(k))
         rsp = np.vectorize(removeSpecials)
@@ -145,7 +145,7 @@ def clear_default_chars(
         stx = np.vectorize(stripText)
         data = stx(data)
     except Exception as e:
-        CoreException('function failed',cause=e,logIt=True,shouldExit=True).act()
+        CoverException('clear_default_chars function failed',cause=e,logIt=True,shouldExit=True).act()
     
     return data
      
