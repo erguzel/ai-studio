@@ -8,4 +8,5 @@ dependencies:
     - nltk==3.8
     - numpy==1.23.5
     - scikit-learn==1.2.0
+    - ai-studio @ .
 prefix: ./.convenv
