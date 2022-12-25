@@ -4,4 +4,5 @@ pytest-html
 joblib
 nltk
 scikit-learn
+numpy
 
