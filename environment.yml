@@ -10,4 +10,5 @@ dependencies:
     - joblib
     - nltk
     - scikit-learn
+    - numpy
 prefix: ./.convenv
