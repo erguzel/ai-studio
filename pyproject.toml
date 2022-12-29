@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-studio"
-version = "0.0.2"
+version = "0.0.3"
 authors = [
   { name="Olgun Erguezel", email="olgunerguzel@gmail.com" },
 ]
 description = "ai-ml development and testing kit"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 ## https://peps.python.org/pep-0631/
 dependencies = [
    'exc-help @ git+ssh://git@github.com/erguzel/exc-help.git' ## requires private key
@@ -20,10 +20,7 @@ classifiers = [
      "Intended Audience :: Science/Research",
      "Intended Audience :: Information Technology",
      "License :: OSI Approved :: MIT License",  
-     "Operating System :: OS Independent",        
-     "Programming Language :: Python :: 3.7",
-     "Programming Language :: Python :: 3.8",
-     "Programming Language :: Python :: 3.9",
+     "Operating System :: OS Independent"
      "Programming Language :: Python :: 3.10",
 ]
 
