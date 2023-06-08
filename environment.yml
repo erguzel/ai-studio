@@ -2,13 +2,17 @@ name: ai-studio-env
 channels:
   - defaults
 dependencies:
+  - python=3.11
   - pip
   - pip:
-    - exc-help @ git+ssh://git@github.com/erguzel/exc-help.git # requires private key
+    - exc-help @ git+ssh://git@github.com/erguzel/exc-help.git # requires key
     - pytest
     - pytest-html
     - joblib
     - nltk
     - scikit-learn
-    - numpy
+    - pandas==2.0.2
+    - numpy==1.23.2
+    - matplotlib==3.7
+    - seaborn==0.12.2
 prefix: ./.convenv
