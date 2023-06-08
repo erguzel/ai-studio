@@ -6,13 +6,13 @@ dependencies:
   - pip
   - pip:
     - exc-help @ git+ssh://git@github.com/erguzel/exc-help.git # requires key
+    - numpy==1.23.2
+    - pandas==2.0.2
+    - matplotlib==3.7
+    - seaborn==0.12.2
     - pytest
     - pytest-html
     - joblib
     - nltk
     - scikit-learn
-    - pandas==2.0.2
-    - numpy==1.23.2
-    - matplotlib==3.7
-    - seaborn==0.12.2
 prefix: ./.convenv
