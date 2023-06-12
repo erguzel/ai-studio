@@ -183,6 +183,7 @@ def so_categoricals_vs_numeric(
         sharey = False,
         emptybackground=False,
         figsize=(12,12),
+        settheme = None,
         addbarlabels = False,
         facets=Facet(row=None,col=None,order= None,wrap=None),
         masterlegend = True):
@@ -224,11 +225,11 @@ def so_categoricals_vs_numeric(
     
         axessorsubfigs = None
         if(emptybackground):
-            fig, axessorsubfigs = plt.subplots(nrows=griddimensions[0],ncols=griddimensions[1],figsize=figsize) if griddimensions else plt.subplots(figsize=figsize)    
+            sns.set_theme (style= 'white' , palette= 'muted' )
         else:
-            fig = plt.figure(figsize=figsize)
-            axessorsubfigs = fig.subfigures(nrows=griddimensions[0],ncols=griddimensions[1]) if griddimensions else fig.subfigures()
-        
+            sns.set_theme (**settheme if settheme else{} ) 
+
+        fig, axessorsubfigs = plt.subplots(nrows=griddimensions[0],ncols=griddimensions[1],figsize=figsize) if griddimensions else plt.subplots(figsize=figsize)    
         axess = axessorsubfigs.flatten() if hasattr(axessorsubfigs,'flatten') else axessorsubfigs if ru.is_array(axessorsubfigs) else [axessorsubfigs]
         
         
@@ -282,35 +283,6 @@ def so_categoricals_vs_numeric(
                     .act()         
         )   
 
-"""
-def so_boxplot(
-        data,
-        feature_name,
-        size=(12,5),
-        facets=(None,None,None)):
-    """"""
-    Boxplot creates a boxplot of a given feature in a dataframe.
-
-    Parameters
-    data : dataframe
-    feature_name : str
-    size : tuple, optional
-    facets : tuple, optional    
-    """"""
-    data['origin']=np.zeros(data.shape[0])
-    (
-         so.Plot(data=data, y='origin',x=feature_name)
-        .add(so.Dots(pointsize=1, alpha=.3),so.Jitter(0.3))
-        .add(so.Range(color="k",linewidth=1), so.Perc([10,90]))
-        .add(so.Range(color="red",linewidth=5), so.Perc([25, 75]))
-        .add(so.Dash(color='orange'),so.Agg('median'))
-        .add(so.Dash(color='green'),so.Agg('mean'))
-        .scale(y=so.Nominal(),x=so.Continuous())
-        .layout(size=size)
-        .facet(row=facets[0],col=facets[1],wrap=facets[2])   
-        .plot()
-    )
-"""
 
 def so_boxplots(
         data,
@@ -335,11 +307,12 @@ def so_boxplots(
         facets=Facet(),
         size = (12.0,5.0),
         figsize=(12.0,5.0),
+        settheme = None,
         masterlegend = False,
-        vertical = True,
+        vertical = False,
         showmeans = 'green',
-        showmedians = 'orange'
-):
+        showmedians = 'orange',
+        showhistogram = False):
     """
     Make a boxplot of numerical data.
 
@@ -406,11 +379,12 @@ def so_boxplots(
         
         axessorsubfigs = None
         if(emptybackground):
-            fig, axessorsubfigs = plt.subplots(nrows=griddimensions[0],ncols=griddimensions[1],figsize=figsize) if griddimensions else plt.subplots(figsize=figsize)    
+            sns.set_theme (style= 'white' , palette= 'muted' )
         else:
-            fig = plt.figure(figsize=figsize)
-            axessorsubfigs = fig.subfigures(nrows=griddimensions[0],ncols=griddimensions[1]) if griddimensions else fig.subfigures()
+            sns.set_theme(**settheme if settheme else {})
         
+        fig, axessorsubfigs = plt.subplots(nrows=griddimensions[0],ncols=griddimensions[1],figsize=figsize) if griddimensions else plt.subplots(figsize=figsize)    
+
         axess = axessorsubfigs.flatten() if hasattr(axessorsubfigs,'flatten') else axessorsubfigs if ru.is_array(axessorsubfigs) else [axessorsubfigs]
         
         dummy_feature = 'observations (upview)' 

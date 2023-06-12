@@ -19,14 +19,15 @@ import aistudio.plot.plot_utils as pu
 
 df_original = pd.read_pickle('examples/dscienc-cstudy/Uber-Pickups-Weather/bin.upw-clear.df.pkl')
 df = df_original.copy()
+cont_vars = ['pickups', 'visibility', 'temp','dew_point_temperature','sea_level_pressure','snow_depth_inc','liquid_precipitation_1h','liquid_precipitation_6h','liquid_precipitation_24h']
 
-p = pu.so_boxplots(
+p,f = pu.so_boxplots(
     data =df,
-    numerics=['pickups','temp','snow_depth_inc'],
-    griddimensions=(1,3),
-    figsize=(10,5),
-    sharex=True,
-    viewmodes='sparse',
-    horizontal=False
-    
+    numerics=cont_vars,
+    griddimensions=(3,3),
+    figsize=(14,12),
+    vertical=False,
+    viewmodes='band'
 )
+
+p.show()
