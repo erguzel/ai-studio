@@ -3,6 +3,7 @@ models/
 assets/
 *.report.html
 *.test-array.csv
+*.pkl
 *array-indexing.ipynb
 tutorials/
 _main.py
