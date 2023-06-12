@@ -1,6 +1,7 @@
 import seaborn as sns
 import seaborn.objects as so
 import matplotlib.pyplot as plt
+from matplotlib.colors import is_color_like
 import numpy as np
 from exchelp.exception_helper import *
 
@@ -335,7 +336,9 @@ def so_boxplots(
         size = (12.0,5.0),
         figsize=(12.0,5.0),
         masterlegend = False,
-        horizontal = True
+        vertical = True,
+        showmeans = 'green',
+        showmedians = 'orange'
 ):
     """
     Make a boxplot of numerical data.
@@ -417,17 +420,19 @@ def so_boxplots(
         for i, (numeric,axes) in enumerate(zip(numerics,axess)):
             p = so.Plot(
                 data=plot_data,
-                x=numeric,
-                y=dummy_feature)\
-                 if horizontal else\
+                x=dummy_feature,
+                y=numeric)\
+                 if vertical else\
                 so.Plot(
                 data=plot_data,
-                x=dummy_feature,
-                y= numeric)
+                x=numeric,
+                y= dummy_feature)
             p = p.add(dotobjects[i],moveobjects[i],legend=masterlegend) 
-            p = p.add(so.Range(color = boxcolors[i],linewidth=boxwidths[i]), so.Perc(percentiles[i]),legend=masterlegend) 
+            p = p.add(so.Range(color = boxcolors[i],linewidth=boxwidths[i]), so.Perc(percentiles[i]),legend=masterlegend)
             p = p.add(so.Range(color = linecolors[i],linewidth=linewidths[i]),so.Perc(su.get_outlier_range(plot_data[numeric])), legend=masterlegend)
-            p = p.add(so.Dash(color = linecolors[i],linewidth=linewidths[i]),so.Perc(su.get_outlier_range(plot_data[numeric])), orient = 'y', legend=masterlegend)
+            p = p.add(so.Dash(color = linecolors[i],linewidth=linewidths[i]),so.Perc(su.get_outlier_range(plot_data[numeric])), orient = 'x' if vertical else 'y' , legend=masterlegend)
+            p = p.add(so.Dash(color=showmeans if is_color_like(showmeans) else 'cyan'),so.Agg(),orient='x' if vertical else 'y') if showmeans else p
+            p = p.add(so.Dash(color=showmedians if is_color_like(showmedians) else 'gold'),so.Agg('median'),orient='x' if vertical else 'y') if showmedians else p
             p = p.facet(col=facets[i].col,row=facets[i].row,wrap=facets[i].wrap,order=facets[i].order)
             p = p.share(x=sharex,y=sharey)
             p= p.label(x=xlabel if xlabel else numeric,y=ylabel if ylabel else numeric,color='',col=rowlabel if rowlabel else facets[i].col,row=collabel if collabel else facets[i].row,title=title)
