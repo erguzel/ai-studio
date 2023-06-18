@@ -628,8 +628,7 @@ class SoPlotter():
         labelparam:LabelParam = LabelParam(),
         limitparam:LimitParam = LimitParam(),
         shareparam:ShareParam = ShareParam(),
-        themeparam:ThemeParam=ThemeParam(()),
-        target = None):
+        themeparam:ThemeParam=ThemeParam(())):
         
         self.__plot__ = so.Plot(**self.__plotparam__.kwargs)
         self.__plot__ = self.__plot__.add(*transformparam.args,**transformparam.kwargs)
@@ -641,7 +640,6 @@ class SoPlotter():
         self.__plot__ = self.__plot__.limit(**limitparam.kwargs)
         self.__plot__ = self.__plot__.share(**shareparam.kwargs)
         self.__plot__ = self.__plot__.theme(*themeparam.args)
-        self.__plot__ = self.__plot__.on(target=target) if target else self.__plot__
 
         return self 
        
@@ -675,7 +673,8 @@ class SoPlotter():
         self.__plot__ = self.__plot__.add(*transformparam.args,**transformparam.kwargs)
         return self
 
-    def plot(self,pyplot=False):
+    def plot(self,pyplot=False,target = None):
+        self.__plot__ = self.__plot__.on(target) if target else self.__plot__
         self.__plotter__ = self.__plot__.plot(pyplot=pyplot)
         return self
     
@@ -700,6 +699,14 @@ class SoPlotter():
         self.__axes__ = self.__figure__.axes
         return self.__axes__
 
+    def boxplot_hist(**kwargs):
+        fig = plt.figure(),
+        sfigs = fig.subfigures(2,1)
+
+
+        
+
+
     def boxplot(self,
                 percentile = [25.0,75.0],
                 obsvars:kwargsbase = kwargsbase(pointsize=0.5),
@@ -708,7 +715,8 @@ class SoPlotter():
                 outliervars:kwargsbase = kwargsbase(color='r',linewidth=5),
                 meanvars :kwargsbase = kwargsbase(color='green',linestyle='--'),
                 medianvars:kwargsbase = kwargsbase(color='gold'),
-                segmentvars:kwargsbase = kwargsbase()
+                segmentvars:kwargsbase = kwargsbase(),
+             
                 ):
 
         data = self.__plotparam__.kwargs['data']
@@ -728,26 +736,26 @@ class SoPlotter():
             raise KeyError('x or y must be specified for a boxplot')
         
         return  self.design(
-                TransformParam(
-                so.Dot(**obsvars.kwargs),so.Jitter(**jittervars.kwargs),**segmentvars.kwargs
+                TransformParam( ## observation points
+                so.Dot(**obsvars.kwargs),so.Jitter(**jittervars.kwargs),**segmentvars.kwargs,
                 )
-            ).addLayer(
+            ).addLayer(## percentile box
                 TransformParam(
                 so.Range(**boxvars.kwargs),so.Perc(percentile)
                 )
-            ).addLayer(
+            ).addLayer( ## outlier range
                 TransformParam(
                 so.Range(**outliervars.kwargs), so.Perc(su.get_outlier_range(data[feature]))
                 )
-            ).addLayer(
+            ).addLayer(## outlier range ends
                 TransformParam(
                 so.Dash(**outliervars.kwargs),so.Perc(su.get_outlier_range(data[feature]))
                 )
-            ).addLayer(
+            ).addLayer(## meanline
                 TransformParam(
                  so.Dash(**meanvars.kwargs),so.Agg('mean')
                 )
-            ).addLayer(
+            ).addLayer(## medianline
                 TransformParam(
                  so.Dash(**medianvars.kwargs),so.Agg('median')
                 ) 
