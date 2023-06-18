@@ -68,7 +68,6 @@ def MONTH_NAMES():
     returns a dict of sorted month names
     """
     return {1:'January', 2:'February', 3:'March', 4:'April', 5:'May', 6:'June', 7:'July', 8:'August', 9:'September', 10:'October', 11:'November', 12:'December'}
-    
 
 def WEEK_DAYS():
     """
@@ -615,7 +614,8 @@ class SoPlotter():
     __axes__ = None
 
     def __init__(self,plotparam:PlotParam):
-        self.__plot__ = so.Plot(**plotparam.kwargs)
+        self.__plotparam__ = plotparam
+        #self.__plot__ = so.Plot(**plotparam.kwargs)
 
     def design (self,
         #plotparam:PlotParam,
@@ -630,7 +630,7 @@ class SoPlotter():
         themeparam:ThemeParam=ThemeParam(()),
         target = None):
         
-        #self.__plot__ = so.Plot(*self.__plotparam__.kwargs)
+        self.__plot__ = so.Plot(**self.__plotparam__.kwargs)
         self.__plot__ = self.__plot__.add(*transformparam.args,**transformparam.kwargs)
         self.__plot__ = self.__plot__.scale(**scaleparam.kwargs)
         self.__plot__ = self.__plot__.facet(**facetparam.kwargs)  
@@ -698,6 +698,43 @@ class SoPlotter():
         self.__figure__ = self.get_figure(pyplot=pyplot)
         self.__axes__ = self.__figure__.axes
         return self.__axes__
+
+    def boxplot(self,
+                percentile = [25.0,75.0],
+                dotalpha = 0.5,
+                boxlinewidth = 10,
+                boxcolor = 'r'):
+
+        data = self.__plotparam__.kwargs['data']
+        orient = 'x'
+        feature = ''
+        otheraxis = np.full(data.shape[0],'obs')
+        if('x' in self.__plotparam__.kwargs):
+            orient = 'y'
+            feature = self.__plotparam__.kwargs['x']
+            self.__plotparam__.kwargs['y'] = otheraxis
+        elif('y' in self.__plotparam__.kwargs):
+            orient = 'x'
+            feature = self.__plotparam__.kwargs['y']
+            self.__plotparam__.kwargs['x'] = otheraxis
+
+        else :
+            raise KeyError('x or y must be specified for a boxplot')
+        
+        return  self.design(
+                TransformParam(
+                so.Dot(alpha=dotalpha),so.Jitter()
+                )
+            ).addLayer(
+                TransformParam(
+                so.Range(linewidth=boxlinewidth,color = boxcolor),so.Perc(percentile)
+                )
+            ).addLayer(
+                TransformParam(
+                so.Range(color='red'), so.Perc(su.get_outlier_range(data[feature]))
+                )
+            )
+
     
 ########################################################################
 
