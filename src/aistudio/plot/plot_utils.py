@@ -606,6 +606,7 @@ class ThemeParam(argsbase):
     def __init__(self,*args):
         super().__init__(*args) 
 
+# TODO: check overriding params in add behaves
 class SoPlotter():
     __plotparam__ = None
     __plot__ = None
@@ -701,9 +702,12 @@ class SoPlotter():
 
     def boxplot(self,
                 percentile = [25.0,75.0],
-                dotalpha = 0.5,
-                boxlinewidth = 10,
-                boxcolor = 'r'):
+                obsvars:kwargsbase = kwargsbase(pointsize=0.5),
+                jittervars:kwargsbase = kwargsbase(width=0.5),
+                boxvars : kwargsbase = kwargsbase(color='k',linewidth=10),
+                outliervars:kwargsbase = kwargsbase(color='r',linewidth=5),
+                segmentvars:kwargsbase = kwargsbase()
+                ):
 
         data = self.__plotparam__.kwargs['data']
         orient = 'x'
@@ -723,15 +727,15 @@ class SoPlotter():
         
         return  self.design(
                 TransformParam(
-                so.Dot(alpha=dotalpha),so.Jitter()
+                so.Dot(**obsvars.kwargs),so.Jitter(**jittervars.kwargs),**segmentvars.kwargs
                 )
             ).addLayer(
                 TransformParam(
-                so.Range(linewidth=boxlinewidth,color = boxcolor),so.Perc(percentile)
+                so.Range(**boxvars.kwargs),so.Perc(percentile)
                 )
             ).addLayer(
                 TransformParam(
-                so.Range(color='red'), so.Perc(su.get_outlier_range(data[feature]))
+                so.Range(**outliervars.kwargs), so.Perc(su.get_outlier_range(data[feature]))
                 )
             )
 
