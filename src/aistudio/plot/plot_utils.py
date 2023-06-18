@@ -706,6 +706,8 @@ class SoPlotter():
                 jittervars:kwargsbase = kwargsbase(width=0.5),
                 boxvars : kwargsbase = kwargsbase(color='k',linewidth=10),
                 outliervars:kwargsbase = kwargsbase(color='r',linewidth=5),
+                meanvars :kwargsbase = kwargsbase(color='green',linestyle='--'),
+                medianvars:kwargsbase = kwargsbase(color='gold'),
                 segmentvars:kwargsbase = kwargsbase()
                 ):
 
@@ -737,6 +739,18 @@ class SoPlotter():
                 TransformParam(
                 so.Range(**outliervars.kwargs), so.Perc(su.get_outlier_range(data[feature]))
                 )
+            ).addLayer(
+                TransformParam(
+                so.Dash(**outliervars.kwargs),so.Perc(su.get_outlier_range(data[feature]))
+                )
+            ).addLayer(
+                TransformParam(
+                 so.Dash(**meanvars.kwargs),so.Agg('mean')
+                )
+            ).addLayer(
+                TransformParam(
+                 so.Dash(**medianvars.kwargs),so.Agg('median')
+                ) 
             )
 
     
