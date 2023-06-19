@@ -8,60 +8,8 @@ from exchelp.exception_helper import *
 import aistudio.runtime.runtime_utils as ru
 import aistudio.statistics.stats_utils as su
 
-class paramatizable:
-    def __init__(self,**params):
-        for k,v in params.items():
-            self.__dict__[k]=v            
 
-    def __str__(self) -> str:
-        return str(self.__dict__)
 
-    def __repr__(self) -> str:
-        return str(self.__dict__)
-
-class MarkParam(paramatizable):
-    def __init__(self,**params):
-        super().__init__(**params)  
-
-class Share(paramatizable):
-    def __init__(self,**shares):
-        super().__init__(**shares)
-
-class Layer():
-    def __init__(self,mark,*transforms, orient = None, legend=True, data=None,**variables):
-        self.mark = mark
-        self.transforms = transforms    
-        self.orient = orient,
-        self.legend = legend
-        self.data = data
-        self.variables = variables   
-
-class Scale(paramatizable):
-    def __init__(self,**params):
-        super().__init__(**params)  
-
-class Limit(paramatizable):
-    def __init__(self,**params):
-        super().__init__(**params)  
-
-class Pair(paramatizable):
-    def __init__(self,x=None, y=None, wrap=None, cross=True):
-        self.x=x
-        self.y=y
-        self.wrap=wrap
-        self.cross=cross
-        super().__init__(x=x, y=y, wrap=wrap, cross=cross)
-
-class Facet(paramatizable):
-    """
-    Equavalent of seaborn.objects.Plot.facet
-    """
-    def __init__(self, col = None,row=None,order = None,wrap = None):
-        self.col = col
-        self.row = row
-        self.order = order
-        self.wrap = wrap   
-        super().__init__(col = col,row=row,order = order,wrap = wrap)   
 
 def MONTH_NAMES():
     """
@@ -91,421 +39,18 @@ def encoder_function(keyOrValue,encoder_dict):
             return k
     return keyOrValue
 
-
-def add_barlabel(figure):
-    """
-    This function adds bar labels to a barplot.
-    designed for plots created with seaborn objects api interface
-    make sure that the used Mark object is Bar() instead of Bars() 
-    Parameters
-
-    plotobject : barplot
-    numberoflayers : int
-    """
-    try:
-        axes = figure.figure.axes
-        for j in range(len(axes)):
-            ax0 = axes[j]
-            ax0_containers = ax0.containers
-            for i in range(len(ax0_containers)):
-                cnt = ax0_containers[i]
-                ax0.bar_label(cnt)
-        return figure
-    except Exception as e:
-        (
-            CoverException(
-            'Barlabel could not be added to the barplot',
-            cause=e,
-            logIt=True,
-            shouldExit=True,
-            dontThrow=True
-            )
-            .adddata('plotobject', figure)
-            .adddata('__WARN__','Check number of (sub)figures and the number of axes. Make sure that the used Mark object is Bar() instead of Bars()')
-            .act()
-        )
-
-def so_categoricals_vs_numeric(
-        data,
-        categoricals,
-        griddimensions,
-        numeric = None,
-        markobjects=so.Bar(),
-        statobjects=so.Agg(),
-        moveobjects = None,
-        scaleobjects = None,
-        limitobjects = None,
-        colors=None,
-        linestyles=None,
-        alphas = None,
-        xlabel = None,
-        ylabel=None,
-        rowlabel = None,
-        collabel=None,
-        title=None,
-        sharex = False,
-        sharey = False,
-        emptybackground=False,
-        figsize=(12,12),
-        settheme = None,
-        addbarlabels = False,
-        facets=Facet(row=None,col=None,order= None,wrap=None),
-        masterlegend = True):
-    """
-    this function creates a continuous target variable versus given categories in a subplot grid. If no target variable is given, the target variable will be the mean of the categoricals.
-    Funtion creates histogram(s) if given parameters are correct.
-
-    Parameters
-    dframe : dataframe of data
-    categories : arraylike of category names in dataframe
-    targetvar : str of target variable name in dataframe
-    grid_dimensions : tuple of ints 
-    nobackground : bool, optional False fue
-    figsize : tuple, optional       
-    mark_object : seaborn mark object, optional
-    agg : str, optional
-
-    """
-    try:
-        
-        if(ru.is_array(numeric)):
-            CoreException('This function accepts only one numeric feature',
-                          None,logIt=True,shouldExit=True).act()
-            
-        categoricals = ru.param_itemize(param_s=categoricals,maxlength = len(categoricals),expectedtypes = str, defaultvalue = None)
-
-        markobjects = ru.param_itemize(param_s=markobjects,maxlength = len(categoricals),expectedtypes = so.Mark, defaultvalue = so.Bar())
-        statobjects = ru.param_itemize(param_s=statobjects,maxlength = len(categoricals),expectedtypes = so.Stat, defaultvalue = so.Agg())
-        moveobjects = ru.param_itemize(param_s=moveobjects,maxlength = len(categoricals),expectedtypes = so.Move, defaultvalue = None)
-        scaleobjects = ru.param_itemize(param_s=scaleobjects,maxlength = len(categoricals),expectedtypes = Scale, defaultvalue = None)
-        limitobjects = ru.param_itemize(param_s=limitobjects,maxlength = len(categoricals),expectedtypes = Limit, defaultvalue = None)
-        
-        colors = ru.param_itemize(param_s=colors,maxlength = len(categoricals),expectedtypes = str, defaultvalue = None)
-        linestyles = ru.param_itemize(param_s=linestyles,maxlength = len(categoricals),expectedtypes = str, defaultvalue = None)
-        alphas = ru.param_itemize(param_s=alphas,maxlength = len(categoricals),expectedtypes = str, defaultvalue = None)
-        griddimensions = griddimensions if all(griddimensions) else (1,1) 
-        
-        facets = ru.param_itemize(param_s=facets,maxlength = len(categoricals),expectedtypes = Facet, defaultvalue = Facet())
-    
-        if(emptybackground):
-            sns.set_theme (style= 'white' , palette= 'muted' )
-        else:
-            sns.set_theme (**settheme if settheme else{} ) 
-        """
-        fig = plt.figure(figsize=figsize,layout = 'tight')
-        fig, axessorsubfigs = plt.subplots(nrows=griddimensions[0],ncols=griddimensions[1],figsize=figsize) if griddimensions else plt.subplots(figsize=figsize)    
-        axess = axessorsubfigs.flatten() if hasattr(axessorsubfigs,'flatten') else axessorsubfigs if ru.is_array(axessorsubfigs) else [axessorsubfigs]
-        """        
-        
-        fig = plt.figure(figsize=figsize,layout='tight')   
-        subfigs = fig.subfigures(griddimensions[0],griddimensions[1]) 
-        subfigs = subfigs.flatten() if hasattr(subfigs,'flatten') else subfigs if ru.is_array(subfigs) else [subfigs]
-        
-        for i, (_cat,_subfig) in enumerate(zip(categoricals,subfigs)):
-            p = so.Plot(
-                data=data,
-                x=_cat,
-                y=numeric,
-                color=colors[i],
-                linestyle=linestyles[i],
-                alpha = alphas[i]
-                ) 
-            
-            p = p.add(markobjects[i],statobjects[i],moveobjects[i],legend=masterlegend) if moveobjects[i] else p.add(markobjects[i],statobjects[i],legend=masterlegend)
-            p = p.scale(**scaleobjects[i].__dict__) if scaleobjects[i] else p.scale(x = so.Nominal(),y=so.Continuous())
-            p = p.limit(**limitobjects[i].__dict__) if limitobjects[i] else p
-            p = p.label(x = _cat,row = facets[i].row if facets[i].row else None)
-            p = p.facet(col=facets[i].col,row=facets[i].row,wrap=facets[i].wrap,order=facets[i].order)
-            p = p.share(x=sharex,y=sharey)
-            p= p.label(x=xlabel if xlabel else _cat,y=ylabel if ylabel else numeric,color='',col=rowlabel if rowlabel else facets[i].col,row=collabel if collabel else facets[i].row,title=title)
-            p= p.on(_subfig)
-            p = p.plot()
-            
-        """
-        for i, (cat,axes) in enumerate(zip(categoricals,axess)):
-            (
-                so.Plot(data=data,x=cat,y=numeric, color = color[i],linestyle=linestyle)
-                .add(markobject[i],statobject[i],legend=masterlegend)
-                .label(x = cat,row = facets[i].row if facets[i].row else None)
-                #.facet(row=facets[i][0],col=facets[i][1],wrap=facets[i][2])
-                .facet(col=facets[i].col,row=facets[i].row,wrap=facets[i].wrap,order=facets[i].order)
-                .share(x=sharex,y=sharey)
-                .label(x=xlabel if xlabel else cat,y=ylabel if ylabel else numeric,color='',col=rowlabel if rowlabel else facets[i].col,row=collabel if collabel else facets[i].row,title=title)
-                .on(axes)
-                .plot()
-            )
-        """
-        if(addbarlabels):
-            fig = add_barlabel(fig)
-        return p,fig
-        
-    except Exception as e:
-        (
-            CoverException(
-                    message='plot could not be created',
-                    cause=e,
-                    logIt=True,
-                    shouldExit=True,
-                    dontThrow=True)
-                    .adddata('griddimensions', griddimensions)
-                    .adddata('__WARN__','Check mark object suits with concept, check grid_dimensions, check feature names correct. targget var is required for non-histogram plots. Bar labels only can be added to Bar() object')
-                    .act()         
-        )   
-
-def so_boxplots(
-        data,
-        numerics,
-        griddimensions,
-        #axes=None,
-        percentiles = [20.0,75.0],
-        colors=None,
-        markers=None,
-        viewmodes= 'sparse',#classic-sparse-band
-        verticals = False,
-        dotcolors = None,
-        boxcolors = 'red',
-        boxwidths =15.0,
-        linecolors = 'k',
-        linewidths = 5.0,
-        xlabel = None,
-        ylabel=None,
-        rowlabel = None,
-        collabel=None,
-        title=None,
-        sharex = False,
-        sharey = False,
-        emptybackground=False,
-        facets=Facet(),
-        size = (12.0,5.0),
-        figsize=(12.0,5.0),
-        settheme = None,
-        masterlegend = False,
-        vertical = False,
-        showmeans = 'cyan',
-        showmedians = 'gold',
-        showhistogram = False):
-    """
-    Make a boxplot of numerical data.
-
-    Parameters
-    data : dataframe
-    numerics : list of str as numerical variables
-    percentiles : list of float, optional e.g. [25,75]
-    griddimensions : tuple, optional    
-    viewmodes : str, optional e.g. 'classic-sparse-band'
-    verticals : bool, optional true for vertical boxplots, false for horizontal boxplots
-    dotcolors : list of str, optional as color of observations
-    boxcolors : str, optional  color of percentile box 
-    boxwidths : float, optional as width of percentile box 
-    linecolors : str, optional  as line color of outliler line
-    linewidths : float, optional  as line width of outliler line
-    xlabel : str, optional  
-    ylabel : str, optional  
-    rowlabel : str, optional  
-    collabel : str, optional    
-    title : str, optional   
-    sharex : bool, optional 
-    sharey : bool, optional 
-    emptybackground : bool, optional    
-    facets : Facet, optional    
-    figsize : tuple, optional   
-    masterlegend : bool, optional   
-    """
-
-    try:
-        
-        master_length = len(numerics) if ru.is_array(numerics)  else 1
-
-        numerics = ru.param_itemize(param_s=numerics,maxlength = master_length,expectedtypes = str, defaultvalue = None)
-        #axes = ru.param_itemize(param_s=axes,maxlength = len_numerics,expectedtypes = plt.axes, defaultvalue = None)
-        percentiles = ru.param_itemize(param_s=percentiles,maxlength = master_length,expectedtypes = (list,np.ndarray), defaultvalue = [25,75])
-        viewmodes = ru.param_itemize(param_s=viewmodes,maxlength = master_length,expectedtypes = str, defaultvalue = 'sparse')
-        verticals = ru.param_itemize(param_s=verticals,maxlength = master_length,expectedtypes = bool, defaultvalue = False)
-        dotcolors = ru.param_itemize(param_s=dotcolors,maxlength = master_length,expectedtypes = str, defaultvalue = None)    
-        boxcolors = ru.param_itemize(param_s=boxcolors,maxlength = master_length,expectedtypes = str, defaultvalue = 'red')
-        boxwidths = ru.param_itemize(param_s=boxwidths,maxlength = master_length,expectedtypes = (int,float), defaultvalue = 15)
-        linecolors= ru.param_itemize(param_s=linecolors,maxlength = master_length,expectedtypes = str, defaultvalue ='k')
-        linewidths = ru.param_itemize(param_s=linewidths,maxlength = master_length,expectedtypes = float, defaultvalue = 5)
-        viewmodes = ru.param_itemize(param_s=viewmodes,maxlength = master_length,expectedtypes = str, defaultvalue = 'sparse')
-        facets = ru.param_itemize(param_s=facets,maxlength = master_length,expectedtypes = Facet, defaultvalue = Facet())
-        colors = ru.param_itemize(param_s=colors,maxlength = len(numerics),expectedtypes = str, defaultvalue = None) 
-        markers = ru.param_itemize(param_s=markers,maxlength = len(numerics),expectedtypes = str, defaultvalue = None)  
-        griddimensions = griddimensions if all(griddimensions) else (1,1)
-
-        dotobjects = []
-        moveobjects = []
-
-        for _numeric in numerics:
-            for viewmode in viewmodes:
-                match viewmode:
-                    case 'classic':
-                        dotobjects.append(so.Dots(alpha=0.1))
-                        moveobjects.append(so.Dodge(1)) 
-                    case 'sparse':
-                        dotobjects.append(so.Dots(alpha=0.1))    
-                        moveobjects.append(so.Jitter(1))        
-                    case 'band':
-                        dotobjects.append(so.Dash(alpha=0.01))  
-                        moveobjects.append(so.Jitter(1))    
-                    case _: 
-                        CoreException('viewmode must be one of classic, sparse, band',
-                                None,logIt=True,shouldExit=True).act()
-        
-        
-        
-        if(emptybackground):
-            sns.set_theme (style= 'white' , palette= 'muted' )
-        else:
-            sns.set_theme(**settheme if settheme else {})
-        
-        #########
-        fig = None,
-        subfigs = []
-        if(showhistogram):
-            grid_row = griddimensions[0] 
-            grid_col = griddimensions[1] 
-
-            grid_row = 2 * grid_row
-            fig = plt.figure(figsize=figsize,layout='tight')
-            grid_subfigs= fig.subfigures(grid_row,grid_col)
-
-            for k in range(0,grid_row,2):
-                for j in range(0,grid_col):
-                    subfigs.append([grid_subfigs[k],grid_subfigs[k+1]]) if len(grid_subfigs.shape)==1 else subfigs.append([grid_subfigs[k,j],grid_subfigs[k+1,j]])
-
-        else:
-            fig = plt.figure(figsize=figsize,layout='tight')   
-            subfigs = fig.subfigures(griddimensions[0],griddimensions[1]) 
-            subfigs =  subfigs.flatten() if hasattr(subfigs,'flatten') else subfigs if ru.is_array(subfigs) else [subfigs]
-
-        #########       
-        dummy_feature = 'observations (upview)' 
-        plot_data = data.copy()
-        plot_data[dummy_feature]=np.full(plot_data.shape[0],'')
-        
-        for i, (_numeric,_subfig) in enumerate(zip(numerics,subfigs)):
-            
-            p_box = so.Plot(
-                data=plot_data,
-                x=dummy_feature,
-                y=_numeric)\
-                 if vertical else\
-                so.Plot(
-                data=plot_data,
-                x=_numeric,
-                y= dummy_feature)
-            p_box = p_box.add(dotobjects[i],moveobjects[i],legend=masterlegend,color = colors[i],marker = markers[i]) 
-            p_box = p_box.add(so.Range(color = boxcolors[i],linewidth=boxwidths[i]), so.Perc(percentiles[i]),legend=masterlegend)
-            p_box = p_box.add(so.Range(color = linecolors[i],linewidth=linewidths[i]),so.Perc(su.get_outlier_range(plot_data[_numeric])), legend=masterlegend)
-            p_box = p_box.add(so.Dash(color = linecolors[i],linewidth=linewidths[i]),so.Perc(su.get_outlier_range(plot_data[_numeric])), orient = 'x' if vertical else 'y' , legend=masterlegend)
-            #p = p.add(so.Line(color=showmeans if is_color_like(showmeans) else 'cyan'),x=np.full(data.shape[0],np.mean(data[numeric])), y =np.linspace(0,np.histogram(data[numeric],bins='auto')[0].max(),data[numeric].shape[0]),orient='x' if vertical else 'y') if showmeans else p
-            #p = p.add(so.Line(color =showmedians if is_color_like(showmedians) else 'gold'),x=np.full(data.shape[0],np.median(data[numeric])), y =np.linspace(0,np.histogram(data[numeric],bins='auto')[0].max(),data[numeric].shape[0]),orient='x' if vertical else 'y') if showmedians else p
-
-            p_box = p_box.add(so.Dash(color=showmeans if is_color_like(showmeans) else 'cyan'),so.Agg('mean'),orient='x' if vertical else 'y') if showmeans else p_box
-            p_box = p_box.add(so.Dash(color=showmedians if is_color_like(showmedians) else 'gold'),so.Agg('median'),orient='x' if vertical else 'y') if showmedians else p_box
-            p_box = p_box.facet(col=facets[i].col,row=facets[i].row,wrap=facets[i].wrap,order=facets[i].order)
-            p_box = p_box.share(x=sharex,y=sharey)
-            p_box= p_box.label(x=xlabel if xlabel else _numeric,y=ylabel if ylabel else _numeric,color='',col=rowlabel if rowlabel else facets[i].col,row=collabel if collabel else facets[i].row,title=title)
-            p_box = p_box.layout(size = size)
-            p_box= p_box.on(_subfig[0] if showhistogram else _subfig)
-            p_box = p_box.plot()
-
-            if(showhistogram):
-                mean_line = np.full(plot_data.shape[0],np.mean(plot_data[_numeric]))
-                bins_axis = np.linspace(0,np.histogram(plot_data[_numeric],bins='auto')[0].max(),plot_data[_numeric].shape[0]) 
-                median_line = np.full(plot_data.shape[0],np.median(plot_data[_numeric]))
-
-                p_hist = (so.Plot(data=plot_data,y=_numeric)) if vertical else (so.Plot(data=plot_data,x=_numeric)) 
-                #p_hist = so.Plot(data=plot_data,x=_numeric)
-                p_hist = p_hist.add(so.Bars(),so.Hist(),so.Stack(),color=colors[i])
-                p_hist = ( p_hist.add(so.Line(color = showmeans if is_color_like(showmeans) else 'cyan'), x = mean_line , y = bins_axis) if showmeans else p_hist ) if not vertical else p_hist
-               # ..( p_hist.add(so.Line(color = showmeans if is_color_like(showmeans) else 'cyan'),y = mean_line) if showmeans else p_hist )
-                #p_hist
-                p_hist = ( p_hist.add(so.Line(color = showmedians if is_color_like(showmedians) else 'gold'), x = median_line , y = bins_axis) if showmedians else p_hist ) if not vertical else p_hist 
-                p_hist = p_hist.share(x=sharex,y=sharey)
-                p_hist = p_hist.label(x=xlabel if xlabel else _numeric,y=ylabel if ylabel else 'count',color='',col=rowlabel if rowlabel else facets[i].col,row=collabel if collabel else facets[i].row,title=title)
-                p_hist = p_hist.layout(size = size)
-                p_hist = p_hist.facet(col=facets[i].col,row=facets[i].row,wrap=facets[i].wrap,order=facets[i].order)
-                p_hist = p_hist.on(_subfig[1])
-                p_hist = p_hist.plot()
-                 
-        return p_box,fig   
-    except Exception as e:
-        (
-            CoverException(
-                    message='plot could not be created',
-                    cause=e,
-                    logIt=True,
-                    shouldExit=True,
-                    dontThrow=False)
-                    .adddata('griddimensions', griddimensions)
-                    .adddata('__WARN__','Check mark object suits with concept, check grid_dimensions, check feature names correct. targget var is required for non-histogram plots. Bar labels only can be added to Bar() object')
-                    .act()         
-        ) 
-
-def so_boxplot1(
-        data,
-        feature,
-        percentiles = [25.0,75.0],
-        facet:Facet = Facet(),
-        size = (4,6),
-        showmean = {'color':'cyan'},
-        showmedian = {'color':'gold'},
-        histogram = False,
-        theme = {},
-        observationslayer = Layer(so.Band(alpha=0.1),so.Jitter(1)),
-        share = {'x':False,'y':False},
-        boxrangevars={'color':'red','linewidth':15},
-        lineranvevars = {'color':'k','linewidth':5},
-
-):
-    try:
-        dummy_feature = 'origin' 
-        plot_data = data.copy()
-        plot_data[dummy_feature]=np.full(plot_data.shape[0],'') 
-        p_box = so.Plot(
-            data = plot_data,
-            x=feature,
-            y=dummy_feature
-        )
-        p_box = p_box.add(
-            observationslayer.mark,
-            *observationslayer.transforms,
-            orient=observationslayer.orient,
-            legend=observationslayer.legend,
-            data=observationslayer.data,
-            **observationslayer.variables
-        )
-        p_box = p_box.add(
-            so.Range(),so.Perc(percentiles)
-        )
-        p_box = p_box.add(
-            so.Range(),so.Perc(su.get_outlier_range(plot_data[feature]))
-        )
-        p_box = p_box.add(
-            so.Dash(),so.Perc(su.get_outlier_range(plot_data[feature]))
-        )
-        p_box = p_box.facet(facet)
-        p_box = p_box.share()
-        p_box = p_box.plot()
-
-
-    except Exception as e:
-        (
-            CoverException(
-                    message='plot could not be created',
-                    cause=e,
-                    logIt=True).act()
-        )
-
-
 ################################
 ################################
 
 class kwargsbase(object):
     def __init__(self,**kwargs):
         self.kwargs = kwargs
-            
+
+    def rmv(self,*keys):
+        for key in keys:
+            if key in self.kwargs:
+                self.kwargs.pop(key)
+
 
 class argsbase(object):
     def __init__(self,*args):
@@ -597,10 +142,7 @@ class SoPlotter():
        
     def update(self,*args:kwargsbase|argsbase|kwargsbase):
 
-        print('tuple->',repr(args))
-
         for arg in args:
-            print('single->',repr(arg))
             if not check_type(arg,(argsbase,kwargsbase,argskwargssbase),typecheckmode=TypeCheckMode.SUBTYPE):
                 CoreException(
                     message='Update arguments must be of base types, argsbase, kwargsbase, argskwargssbase',
@@ -657,101 +199,8 @@ class SoPlotter():
         self.__axes__ = self.__figure__.axes
         return self.__axes__
 
-    """
-    def boxplot_hist(plotparam:PlotParam,**boxplotparams):
-        fig = plt.figure()
-        sfigs = fig.subfigures(2,1)
-
-        SoPlotter(plotparam).boxplot(**boxplotparams).plot(target =sfigs[0])
-        SoPlotter(plotparam).design(TransformParam(so.Bars(),so.Hist())).plot(target = sfigs[1])
-    """        
-        
-    """
-
-    def boxplot(self,percentile = [25.0,75.0],
-                obsvars:kwargsbase = kwargsbase(pointsize=0.5),
-                jittervars:kwargsbase = kwargsbase(width=0.5),
-                boxvars : kwargsbase = kwargsbase(color='k',linewidth=10),
-                outliervars:kwargsbase = kwargsbase(color='r',linewidth=5),
-                meanvars :kwargsbase = kwargsbase(color='green',linestyle='--'),
-                medianvars:kwargsbase = kwargsbase(color='gold'),
-                segmentvars:kwargsbase = kwargsbase()
-                ):
-
-        data = self.__plotparam__.kwargs['data']
-        orient = 'x'
-        feature = ''
-        otheraxis = np.full(data.shape[0],'obs')
-        if('x' in self.__plotparam__.kwargs):
-            orient = 'y'
-            feature = self.__plotparam__.kwargs['x']
-            self.__plotparam__.kwargs['y'] = otheraxis
-        elif('y' in self.__plotparam__.kwargs):
-            orient = 'x'
-            feature = self.__plotparam__.kwargs['y']
-            self.__plotparam__.kwargs['x'] = otheraxis
-
-        else :
-            raise KeyError('x or y must be specified for a boxplot')
-        
-        return  self.design(
-                TransformParam( ## observation points
-                so.Dot(**obsvars.kwargs),so.Jitter(**jittervars.kwargs),**segmentvars.kwargs,
-                )
-            ).addLayer(## percentile box
-                TransformParam(
-                so.Range(**boxvars.kwargs),so.Perc(percentile)
-                )
-            ).addLayer( ## outlier range
-                TransformParam(
-                so.Range(**outliervars.kwargs), so.Perc(su.get_outlier_range(data[feature]))
-                )
-            ).addLayer(## outlier range ends
-                TransformParam(
-                so.Dash(**outliervars.kwargs),so.Perc(su.get_outlier_range(data[feature]))
-                )
-            ).addLayer(## meanline
-                TransformParam(
-                 so.Dash(**meanvars.kwargs),so.Agg('mean')
-                )
-            ).addLayer(## medianline
-                TransformParam(
-                 so.Dash(**medianvars.kwargs),so.Agg('median')
-                ) 
-            )
-    """
     
 ########################################################################
-
-def plot_any(
-    plotparam:PlotParam,
-    transformparam:TransformParam =(),
-    scaleparam:ScaleParam = ScaleParam(),
-    facetparam:FacetParam = FacetParam(),
-    pairparam:PairParam = PairParam(),
-    layoutparam:LayoutParam = LayoutParam(),
-    labelparam:LabelParam = LabelParam(),
-    limitparam:LimitParam = LimitParam(),
-    shareparam:ShareParam = ShareParam(),
-    themeparam:ThemeParam=ThemeParam(())
-    ,pyplot = False,target = None,plot=True):
- 
-
-  p= so.Plot(**plotparam.kwargs)
-  p = p.add(*transformparam.args,**transformparam.kwargs)
-  p = p.scale(**scaleparam.kwargs)
-  p = p.facet(**facetparam.kwargs)  
-  p = p.pair(**pairparam.kwargs)
-  p = p.layout(**layoutparam.kwargs)
-  p = p.label(**labelparam.kwargs)
-  p = p.limit(**limitparam.kwargs)
-  p = p.share(**shareparam.kwargs)
-  p = p.theme(*themeparam.args)
-  p = p.on(target=target) if target else p
-  p = p.plot(pyplot=pyplot) if plot else p
-  return p
-
-
 
 def boxplot(plotparam:PlotParam,
             percentile = [25.0,75.0],
@@ -765,33 +214,24 @@ def boxplot(plotparam:PlotParam,
     medianvars:kwargsbase = kwargsbase(color='gold'),
     segmentvars:kwargsbase = kwargsbase()):
     """
-    
-    data = plotparam.kwargs['data']
-    #orient = 'x'
-    feature = ''
-    otheraxis = np.full(data.shape[0],'obs')
-    if('x' in plotparam.kwargs):
-        #orient = 'y'
-        feature = plotparam.kwargs['x']
-        plotparam.kwargs['y'] = otheraxis
-    elif('y' in plotparam.kwargs):
-        #orient = 'x'
-        feature = plotparam.kwargs['y']
-        plotparam.kwargs['x'] = otheraxis
 
-    else :
-        raise KeyError('x or y must be specified for a boxplot')
-    
+    ##TODO check only x or y provided
+
+    temp_plotparam = kwargsbase(**plotparam.kwargs)
+    data = temp_plotparam.kwargs['data']    
+    temp_plotparam.rmv('data')
+    axis,feature = temp_plotparam.kwargs.popitem()
+    otheraxis = 'y' if axis == 'x' else 'x'
+    plotparam.kwargs[otheraxis] = np.full(data.shape[0],'obs')
 
     obsvars = boxplotvariables['obsvars'] if 'obsvars' in boxplotvariables else  kwargsbase(pointsize=0.5)
     jittervars = boxplotvariables['jittervars'] if 'jittervars' in boxplotvariables else  kwargsbase(width=0.5)
     boxvars= boxplotvariables['boxvars'] if 'boxvars' in boxplotvariables else  kwargsbase(color='k',linewidth=15)
     outliervars= boxplotvariables['outliervars'] if 'outliervars' in boxplotvariables else  kwargsbase(color='r',linewidth=5)
-    meanvars= boxplotvariables['meanvars'] if 'meanvars' in boxplotvariables else  kwargsbase(color='green',linestyle='--')
-    medianvars= boxplotvariables['medianvars'] if 'medianvars' in boxplotvariables else  kwargsbase(color='gold')
+    meanvars= boxplotvariables['meanvars'] if 'meanvars' in boxplotvariables else  kwargsbase(color='red',linestyle='--')
+    medianvars= boxplotvariables['medianvars'] if 'medianvars' in boxplotvariables else  kwargsbase(color='k')
     segmentvars= boxplotvariables['segmentvars'] if 'segmentvars' in boxplotvariables else  kwargsbase()
 
- 
 
     sp =  SoPlotter(
               plotparam=plotparam
@@ -822,8 +262,17 @@ def boxplot(plotparam:PlotParam,
         )
     return sp
     
-def boxplot_hist1(plotparam:PlotParam,*updateparams:kwargsbase,percentile=[25,75],figsize = (6.4,4.8), **boxplotvariables:kwargsbase):
+def boxplot_hist(
+        plotparam:PlotParam,
+        *updateparams:kwargsbase,
+        percentile=[25,75],
+        figsize = (6.4,4.8), 
+        **boxplotvariables:kwargsbase
+        ):
     """
+    updateparams: kwargsbase i.e LayoutParam(), ScaleParam() etc
+
+    boxplot variables :
     obsvars:kwargsbase = kwargsbase(pointsize=0.5),
     jittervars:kwargsbase = kwargsbase(width=0.5),
     boxvars : kwargsbase = kwargsbase(color='k',linewidth=15),
@@ -833,19 +282,102 @@ def boxplot_hist1(plotparam:PlotParam,*updateparams:kwargsbase,percentile=[25,75
     segmentvars:kwargsbase = kwargsbase()):
     """
 
+    ## TODO check only x or y allowed
+
     fig = plt.figure(figsize=figsize)
     sfigs = fig.subfigures(2,1)
-
-    if 'y' in plotparam.kwargs:
-        sfigs = fig.subfigures(1,2)
+    linedata = kwargsbase(**plotparam.kwargs)    
+    data = linedata.kwargs['data']
+    linedata.rmv('data')
+    axis,feature = linedata.kwargs.popitem()
 
     hst = SoPlotter(plotparam=plotparam)
     hst = hst.design(TransformParam(so.Bars(),so.Hist()))
     hst = hst.update(*updateparams) if len(updateparams) > 0 else hst
     hst = hst.plot(target=sfigs[1],pyplot=True)
+    for ax in sfigs[1].axes:
+        ax.axvline(np.mean(data[feature]),color='red',linestyle = '--') if axis == 'x' else\
+        ax.axhline(np.mean(data[feature]),color='red',linestyle = '--')
+        ax.axvline(np.median(data[feature]),color='k',linestyle = '-') if axis == 'x' else\
+        ax.axhline(np.median(data[feature]),color='k',linestyle = '-')
  
     bp = boxplot(plotparam=plotparam,percentile=percentile,**boxplotvariables)
     bp = bp.update(*updateparams) if len(updateparams) > 0 else bp
     bp = bp.plot(target=sfigs[0],pyplot=True)
    
     return fig
+
+def multi_boxplot_hist(
+            plotparam:PlotParam,
+            features:list[str],
+            updateparams:list[kwargsbase],
+            boxplotvariables:list[kwargsbase],
+            percentile=[25,75],
+            figsize = (6.4,4.8),
+            wrap = 3,
+            ):
+    """
+    updateparams: kwargsbase i.e LayoutParam(), ScaleParam() etc
+
+    boxplot variables :
+    obsvars:kwargsbase = kwargsbase(pointsize=0.5),
+    jittervars:kwargsbase = kwargsbase(width=0.5),
+    boxvars : kwargsbase = kwargsbase(color='k',linewidth=15),
+    outliervars:kwargsbase = kwargsbase(color='r',linewidth=5),
+    meanvars :kwargsbase = kwargsbase(color='green',linestyle='--'),
+    medianvars:kwargsbase = kwargsbase(color='gold'),
+    segmentvars:kwargsbase = kwargsbase()):
+    """
+    nrows = 1
+    ncols = ncols=wrap if len(features) > wrap else len(features)
+    for i in range(0,len(features)):
+        if(i>= wrap and i % wrap == 0):
+            nrows+=1 
+
+
+    fig = plt.figure(figsize=figsize)
+    sfigs = fig.subfigures(nrows,ncols)
+    linedata = kwargsbase(**plotparam.kwargs)    
+    data = linedata.kwargs['data']
+    linedata.rmv('data')
+    axis,feature = linedata.kwargs.popitem()
+    
+    for i in range(0,nrows):
+        for j in range(0,ncols):
+            sfig = sfigs[i,j]
+            raise TypeError('Not implemented yet') ##TODO
+
+
+
+def add_barlabel(figure):
+    """
+    This function adds bar labels to a barplot.
+    designed for plots created with seaborn objects api interface
+    make sure that the used Mark object is Bar() instead of Bars() 
+    Parameters
+
+    plotobject : barplot
+    numberoflayers : int
+    """
+    try:
+        axes = figure.figure.axes
+        for j in range(len(axes)):
+            ax0 = axes[j]
+            ax0_containers = ax0.containers
+            for i in range(len(ax0_containers)):
+                cnt = ax0_containers[i]
+                ax0.bar_label(cnt)
+        return figure
+    except Exception as e:
+        (
+            CoverException(
+            'Barlabel could not be added to the barplot',
+            cause=e,
+            logIt=True,
+            shouldExit=True,
+            dontThrow=True
+            )
+            .adddata('plotobject', figure)
+            .adddata('__WARN__','Check number of (sub)figures and the number of axes. Make sure that the used Mark object is Bar() instead of Bars()')
+            .act()
+        )
