@@ -91,52 +91,6 @@ def encoder_function(keyOrValue,encoder_dict):
             return k
     return keyOrValue
 
-def boxplot_vs_hist(feature,figsize=(12,8),bins=None,showstatsline=False):
-    """
-    Plots a boxplot and histogram of a feature in a column.
-    
-    Parameters
-    feature : str 
-    figsize : tuple, optional
-    bins : int, optional 
-    showstats : bool, optional  
-    ----------
-    """
-    f, (ax_box2, ax_hist2) = plt.subplots(nrows=2,sharex=True,figsize=figsize,gridspec_kw = {"height_ratios": (.25, .75)})
-    sns.boxplot(x=feature,ax=ax_box2,showmeans=True,color='r')
-    sns.histplot(x=feature,ax=ax_hist2,bins=bins) if bins else sns.histplot(x=feature,ax=ax_hist2)
-    if(showstatsline):
-        ax_hist2.axvline(x=np.mean(feature),color='g',linestyle='--')
-        ax_hist2.axvline(x=np.median(feature),color='r',linestyle=':')
-
-def boxplots_vs_hists(df,nrow,ncol,features,figsize=(12,8),bins=None,showstatsline=False):
-    """
-    Plots a boxplot with given number of rows and columns and given columns of features in a dataframe.
-
-    Parameters
-    df : dataframe
-    nrow : int
-    ncol : int
-    features : list
-    figsize : tuple, optional
-    bins : int, optional 
-    showstats : bool, optional  
-    ----------  
-    """
-    fig = plt.figure(figsize=figsize)
-    fig.subplots_adjust(hspace=0.3)
-    subfigs = fig.subfigures(nrow,ncol)
-    for i in range(nrow):
-        for j in range(ncol):  
-            subfigs[i,j].subplots(2,1,sharex=True, gridspec_kw = {"height_ratios": (.25, .75)})  
-    
-    for idx,subfig in enumerate(subfigs.flatten()) :
-        sns.boxplot(x=df[features[idx]],showmeans=True,color='red',ax=subfig.axes[0])   
-        sns.histplot(x=df[features[idx]],color='black',ax=subfig.axes[1],bins=bins) if bins else sns.histplot(x=df[features[idx]],color='black',ax=subfig.axes[1])
-        subfig.axes[1].axvline(np.mean(df[features[idx]]),color='g',linestyle='--') 
-        subfig.axes[1].axvline(np.median(df[features[idx]]),color='orange',linestyle='-')
-    
-    return fig
 
 def add_barlabel(figure):
     """
@@ -297,7 +251,6 @@ def so_categoricals_vs_numeric(
                     .adddata('__WARN__','Check mark object suits with concept, check grid_dimensions, check feature names correct. targget var is required for non-histogram plots. Bar labels only can be added to Bar() object')
                     .act()         
         )   
-
 
 def so_boxplots(
         data,
@@ -489,8 +442,6 @@ def so_boxplots(
                     .adddata('__WARN__','Check mark object suits with concept, check grid_dimensions, check feature names correct. targget var is required for non-histogram plots. Bar labels only can be added to Bar() object')
                     .act()         
         ) 
-        
-
 
 def so_boxplot1(
         data,
@@ -607,12 +558,13 @@ class ThemeParam(argsbase):
         super().__init__(*args) 
 
 # TODO: check overriding params in add behaves
+
 class SoPlotter():
-    __plotparam__ = None
-    __plot__ = None
-    __plotter__ = None
-    __figure__ = None
-    __axes__ = None
+    #__plotparam__ = None
+    #__plot__ = None
+    #__plotter__ = None
+    #__figure__ = None
+    #__axes__ = None
 
     def __init__(self,plotparam:PlotParam):
         self.__plotparam__ = plotparam
@@ -643,29 +595,35 @@ class SoPlotter():
 
         return self 
        
-    def update(self,*args):
+    def update(self,*args:kwargsbase|argsbase|kwargsbase):
+
+        print('tuple->',repr(args))
+
         for arg in args:
+            print('single->',repr(arg))
             if not check_type(arg,(argsbase,kwargsbase,argskwargssbase),typecheckmode=TypeCheckMode.SUBTYPE):
                 CoreException(
                     message='Update arguments must be of base types, argsbase, kwargsbase, argskwargssbase',
                     cause=None,
                     logIt=True).act()
-        if (check_type(arg,ScaleParam,typecheckmode=TypeCheckMode.SUBTYPE)):
-            self.__plot__ = self.__plot__.scale(**arg.kwargs)
-        if (check_type(arg,FacetParam,typecheckmode=TypeCheckMode.SUBTYPE)):
-            self.__plot__ = self.__plot__.facet(**arg.kwargs)
-        if (check_type(arg,PairParam,typecheckmode=TypeCheckMode.SUBTYPE)):
-            self.__plot__ = self.__plot__.pair(**arg.kwargs)
-        if (check_type(arg,LayoutParam,typecheckmode=TypeCheckMode.SUBTYPE)):
-            self.__plot__ = self.__plot__.layout(**arg.kwargs)
-        if (check_type(arg,LabelParam,typecheckmode=TypeCheckMode.SUBTYPE)):
-            self.__plot__ = self.__plot__.label(**arg.kwargs)
-        if (check_type(arg,LimitParam,typecheckmode=TypeCheckMode.SUBTYPE)):
-            self.__plot__ = self.__plot__.limit(**arg.kwargs)
-        if (check_type(arg,ShareParam,typecheckmode=TypeCheckMode.SUBTYPE)):
-            self.__plot__ = self.__plot__.share(**arg.kwargs)
-        if (check_type(arg,ThemeParam,typecheckmode=TypeCheckMode.SUBTYPE)):
-            self.__plot__ = self.__plot__.theme(*arg.args)
+            if (check_type(arg,ScaleParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+                self.__plot__ = self.__plot__.scale(**arg.kwargs)
+            elif (check_type(arg,FacetParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+                self.__plot__ = self.__plot__.facet(**arg.kwargs)
+            elif (check_type(arg,PairParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+                self.__plot__ = self.__plot__.pair(**arg.kwargs)
+            elif (check_type(arg,LayoutParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+                self.__plot__ = self.__plot__.layout(**arg.kwargs)
+            elif (check_type(arg,LabelParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+                self.__plot__ = self.__plot__.label(**arg.kwargs)
+            elif (check_type(arg,LimitParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+                self.__plot__ = self.__plot__.limit(**arg.kwargs)
+            elif (check_type(arg,ShareParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+                self.__plot__ = self.__plot__.share(**arg.kwargs)
+            elif (check_type(arg,ThemeParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+                self.__plot__ = self.__plot__.theme(*arg.args)
+            else:
+                pass# TODO
         
         return self
 
@@ -699,24 +657,25 @@ class SoPlotter():
         self.__axes__ = self.__figure__.axes
         return self.__axes__
 
-    def boxplot_hist(**kwargs):
-        fig = plt.figure(),
+    """
+    def boxplot_hist(plotparam:PlotParam,**boxplotparams):
+        fig = plt.figure()
         sfigs = fig.subfigures(2,1)
 
-
+        SoPlotter(plotparam).boxplot(**boxplotparams).plot(target =sfigs[0])
+        SoPlotter(plotparam).design(TransformParam(so.Bars(),so.Hist())).plot(target = sfigs[1])
+    """        
         
+    """
 
-
-    def boxplot(self,
-                percentile = [25.0,75.0],
+    def boxplot(self,percentile = [25.0,75.0],
                 obsvars:kwargsbase = kwargsbase(pointsize=0.5),
                 jittervars:kwargsbase = kwargsbase(width=0.5),
                 boxvars : kwargsbase = kwargsbase(color='k',linewidth=10),
                 outliervars:kwargsbase = kwargsbase(color='r',linewidth=5),
                 meanvars :kwargsbase = kwargsbase(color='green',linestyle='--'),
                 medianvars:kwargsbase = kwargsbase(color='gold'),
-                segmentvars:kwargsbase = kwargsbase(),
-             
+                segmentvars:kwargsbase = kwargsbase()
                 ):
 
         data = self.__plotparam__.kwargs['data']
@@ -760,11 +719,11 @@ class SoPlotter():
                  so.Dash(**medianvars.kwargs),so.Agg('median')
                 ) 
             )
-
+    """
     
 ########################################################################
 
-def plot_stg(
+def plot_any(
     plotparam:PlotParam,
     transformparam:TransformParam =(),
     scaleparam:ScaleParam = ScaleParam(),
@@ -791,3 +750,102 @@ def plot_stg(
   p = p.on(target=target) if target else p
   p = p.plot(pyplot=pyplot) if plot else p
   return p
+
+
+
+def boxplot(plotparam:PlotParam,
+            percentile = [25.0,75.0],
+            **boxplotvariables:kwargsbase ):
+    """
+    obsvars:kwargsbase = kwargsbase(pointsize=0.5),
+    jittervars:kwargsbase = kwargsbase(width=0.5),
+    boxvars : kwargsbase = kwargsbase(color='k',linewidth=15),
+    outliervars:kwargsbase = kwargsbase(color='r',linewidth=5),
+    meanvars :kwargsbase = kwargsbase(color='green',linestyle='--'),
+    medianvars:kwargsbase = kwargsbase(color='gold'),
+    segmentvars:kwargsbase = kwargsbase()):
+    """
+    
+    data = plotparam.kwargs['data']
+    #orient = 'x'
+    feature = ''
+    otheraxis = np.full(data.shape[0],'obs')
+    if('x' in plotparam.kwargs):
+        #orient = 'y'
+        feature = plotparam.kwargs['x']
+        plotparam.kwargs['y'] = otheraxis
+    elif('y' in plotparam.kwargs):
+        #orient = 'x'
+        feature = plotparam.kwargs['y']
+        plotparam.kwargs['x'] = otheraxis
+
+    else :
+        raise KeyError('x or y must be specified for a boxplot')
+    
+
+    obsvars = boxplotvariables['obsvars'] if 'obsvars' in boxplotvariables else  kwargsbase(pointsize=0.5)
+    jittervars = boxplotvariables['jittervars'] if 'jittervars' in boxplotvariables else  kwargsbase(width=0.5)
+    boxvars= boxplotvariables['boxvars'] if 'boxvars' in boxplotvariables else  kwargsbase(color='k',linewidth=15)
+    outliervars= boxplotvariables['outliervars'] if 'outliervars' in boxplotvariables else  kwargsbase(color='r',linewidth=5)
+    meanvars= boxplotvariables['meanvars'] if 'meanvars' in boxplotvariables else  kwargsbase(color='green',linestyle='--')
+    medianvars= boxplotvariables['medianvars'] if 'medianvars' in boxplotvariables else  kwargsbase(color='gold')
+    segmentvars= boxplotvariables['segmentvars'] if 'segmentvars' in boxplotvariables else  kwargsbase()
+
+ 
+
+    sp =  SoPlotter(
+              plotparam=plotparam
+                      ).design(
+            TransformParam( ## observation points
+            so.Dot(**obsvars.kwargs),so.Jitter(**jittervars.kwargs),**segmentvars.kwargs,
+            )
+        ).addLayer(## percentile box
+            TransformParam(
+            so.Range(**boxvars.kwargs),so.Perc(percentile)
+            )
+        ).addLayer( ## outlier range
+            TransformParam(
+            so.Range(**outliervars.kwargs), so.Perc(su.get_outlier_range(data[feature],percentile))
+            )
+        ).addLayer(## outlier range ends
+            TransformParam(
+            so.Dash(**outliervars.kwargs),so.Perc(su.get_outlier_range(data[feature],percentile))
+            )
+        ).addLayer(## meanline
+            TransformParam(
+                so.Dash(**meanvars.kwargs),so.Agg('mean')
+            )
+        ).addLayer(## medianline
+            TransformParam(
+                so.Dash(**medianvars.kwargs),so.Agg('median')
+            ) 
+        )
+    return sp
+    
+def boxplot_hist1(plotparam:PlotParam,*updateparams:kwargsbase,percentile=[25,75],figsize = (6.4,4.8), **boxplotvariables:kwargsbase):
+    """
+    obsvars:kwargsbase = kwargsbase(pointsize=0.5),
+    jittervars:kwargsbase = kwargsbase(width=0.5),
+    boxvars : kwargsbase = kwargsbase(color='k',linewidth=15),
+    outliervars:kwargsbase = kwargsbase(color='r',linewidth=5),
+    meanvars :kwargsbase = kwargsbase(color='green',linestyle='--'),
+    medianvars:kwargsbase = kwargsbase(color='gold'),
+    segmentvars:kwargsbase = kwargsbase()):
+    """
+
+    fig = plt.figure(figsize=figsize)
+    sfigs = fig.subfigures(2,1)
+
+    if 'y' in plotparam.kwargs:
+        sfigs = fig.subfigures(1,2)
+
+    hst = SoPlotter(plotparam=plotparam)
+    hst = hst.design(TransformParam(so.Bars(),so.Hist()))
+    hst = hst.update(*updateparams) if len(updateparams) > 0 else hst
+    hst = hst.plot(target=sfigs[1],pyplot=True)
+ 
+    bp = boxplot(plotparam=plotparam,percentile=percentile,**boxplotvariables)
+    bp = bp.update(*updateparams) if len(updateparams) > 0 else bp
+    bp = bp.plot(target=sfigs[0],pyplot=True)
+   
+    return fig
