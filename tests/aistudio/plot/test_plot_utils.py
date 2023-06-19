@@ -19,3 +19,7 @@ import aistudio.plot.plot_utils as pu
 
 df_original = pd.read_pickle('examples/dscienc-cstudy/Uber-Pickups-Weather/bin.upw-clear.df.pkl')
 df = df_original.copy()
+
+fig = pu.boxplot_hist(pu.PlotParam(
+    data = df, x = 'pickups'
+))
