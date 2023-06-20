@@ -1,7 +1,5 @@
-import seaborn as sns
 import seaborn.objects as so
 import matplotlib.pyplot as plt
-from matplotlib.colors import is_color_like
 import numpy as np
 from exchelp.exception_helper import *
 
@@ -50,7 +48,6 @@ class kwargsbase(object):
         for key in keys:
             if key in self.kwargs:
                 self.kwargs.pop(key)
-
 
 class argsbase(object):
     def __init__(self,*args):
@@ -102,21 +99,12 @@ class ThemeParam(argsbase):
     def __init__(self,*args):
         super().__init__(*args) 
 
-# TODO: check overriding params in add behaves
-
 class SoPlot():
-    #__plotparam__ = None
-    #__plot__ = None
-    #__plotter__ = None
-    #__figure__ = None
-    #__axes__ = None
 
     def __init__(self,plotparam:PlotParam):
         self.__plotparam__ = plotparam
-        #self.__plot__ = so.Plot(**plotparam.kwargs)
 
     def design (self,
-        #plotparam:PlotParam,
         transformparam:TransformParam =TransformParam(),
         scaleparam:ScaleParam = ScaleParam(),
         facetparam:FacetParam = FacetParam(),
@@ -165,6 +153,7 @@ class SoPlot():
             elif (check_type(arg,ThemeParam,typecheckmode=TypeCheckMode.SUBTYPE)):
                 self.__plot__ = self.__plot__.theme(*arg.args)
             else:
+                print('TODO line 158 ',__file__)
                 pass# TODO
         
         return self
@@ -185,23 +174,6 @@ class SoPlot():
          self.__plotter__ = self.__plot__.plot(pyplot=pyplot)
          return self.__plotter__
        
-    def get_figure(self,pyplot = False):
-        if(self.__figure__ ):   
-            return self.__figure__
-        self.__plotter__ = self.get_plotter(pyplot=pyplot)
-        self.__figure__ = self.__plotter__._figure
-        return self.__figure__
-
-    def get_axes(self,pyplot = False):
-        if(self.__axes__ ):   
-            return self.__axes__
-        self.__figure__ = self.get_figure(pyplot=pyplot)
-        self.__axes__ = self.__figure__.axes
-        return self.__axes__
-
-    
-
-
 ########################################################################
 
 def boxplot(plotparam:PlotParam,
@@ -224,7 +196,11 @@ def boxplot(plotparam:PlotParam,
     temp_plotparam.rmv('data')
     axis,feature = temp_plotparam.kwargs.popitem()
     otheraxis = 'y' if axis == 'x' else 'x'
-    plotparam.kwargs[otheraxis] = np.full(data.shape[0],'obs')
+    
+    temp_plotparam.kwargs[axis] = feature
+    temp_plotparam.kwargs[otheraxis] = np.full(data.shape[0],'obs')
+    temp_plotparam.kwargs['data'] = data
+    
 
     obsvars = boxplotvariables['obsvars'] if 'obsvars' in boxplotvariables else  kwargsbase(pointsize=0.5)
     jittervars = boxplotvariables['jittervars'] if 'jittervars' in boxplotvariables else  kwargsbase(width=0.5)
@@ -236,7 +212,7 @@ def boxplot(plotparam:PlotParam,
 
 
     sp =  SoPlot(
-              plotparam=plotparam
+              plotparam=temp_plotparam
                       ).design(
             TransformParam( ## observation points
             so.Dot(**obsvars.kwargs),so.Jitter(**jittervars.kwargs),**segmentvars.kwargs,
@@ -288,10 +264,10 @@ def boxplot_hist(
 
     fig = plt.figure(figsize=figsize)
     sfigs = fig.subfigures(2,1)
-    linedata = kwargsbase(**plotparam.kwargs)    
-    data = linedata.kwargs['data']
-    linedata.rmv('data')
-    axis,feature = linedata.kwargs.popitem()
+    metadata = kwargsbase(**plotparam.kwargs)    
+    data = metadata.kwargs['data']
+    metadata.rmv('data')
+    axis,feature = metadata.kwargs.popitem()
 
     hst = SoPlot(plotparam=plotparam)
     hst = hst.design(TransformParam(so.Bars(),so.Hist()))
@@ -308,60 +284,6 @@ def boxplot_hist(
     bp = bp.plot(target=sfigs[0],pyplot=True)
    
     return fig
-
-def multi_boxplot(
-            plotparam:PlotParam,
-            features:list[str],
-            updateparams:list[kwargsbase],
-            boxplotvariables:list[kwargsbase],
-            percentiles=[[25,75]],
-            figsize = (6.4,4.8),
-            wrap = 3,
-            showhistogram = False
-            ):
-    """
-    updateparams: kwargsbase i.e LayoutParam(), ScaleParam() etc
-
-    boxplot variables :
-    obsvars:kwargsbase = kwargsbase(pointsize=0.5),
-    jittervars:kwargsbase = kwargsbase(width=0.5),
-    boxvars : kwargsbase = kwargsbase(color='k',linewidth=15),
-    outliervars:kwargsbase = kwargsbase(color='r',linewidth=5),
-    meanvars :kwargsbase = kwargsbase(color='green',linestyle='--'),
-    medianvars:kwargsbase = kwargsbase(color='gold'),
-    segmentvars:kwargsbase = kwargsbase()):
-    """
-    nrows = 1
-    ncols = ncols=wrap if len(features) > wrap else len(features)
-    for i in range(0,len(features)):
-        if(i>= wrap and i % wrap == 0):
-            nrows+=1 
-
-
-    fig = plt.figure(figsize=figsize)
-    sfigs = fig.subfigures(nrows,ncols)
-    sfigs = sfigs.flatten() if hasattr(sfigs,'flatten') else\
-          sfigs if ru.is_array(sfigs) else [sfigs]
-    linedata = kwargsbase(**plotparam.kwargs)    
-    data = linedata.kwargs['data']
-    linedata.rmv('data')
-    axis,feature = linedata.kwargs.popitem()
-    
-    for sfig in sfigs:
-        pass ##TODO
-
-
-def multiplot(
-        plotparam:PlotParam,
-        features:list[str],
-        updateparams:list[kwargsbase],
-        boxplotvariables:list[kwargsbase],
-        percentiles=[[25,75]],
-        figsize = (6.4,4.8),
-        wrap = 3
-        ):
-    pass#TODO
-
 
 def add_barlabel(figure):
     """
@@ -395,3 +317,91 @@ def add_barlabel(figure):
             .adddata('__WARN__','Check number of (sub)figures and the number of axes. Make sure that the used Mark object is Bar() instead of Bars()')
             .act()
         )
+
+
+def multi_boxplot(
+            plotparam:PlotParam,
+            features:list[str],
+            updateparams:list[argsbase]=[],
+            boxplotvariables:list[kwargsbase]=[],
+            percentiles: list[list] = [25,75],
+            figsize = (6.4,4.8),
+            wrap = 3,
+            showhistogram = False
+            ):
+    """
+    updateparams: kwargsbase i.e LayoutParam(), ScaleParam() etc
+
+    boxplot variables :
+    obsvars:kwargsbase = kwargsbase(pointsize=0.5),
+    jittervars:kwargsbase = kwargsbase(width=0.5),
+    boxvars : kwargsbase = kwargsbase(color='k',linewidth=15),
+    outliervars:kwargsbase = kwargsbase(color='r',linewidth=5),
+    meanvars :kwargsbase = kwargsbase(color='green',linestyle='--'),
+    medianvars:kwargsbase = kwargsbase(color='gold'),
+    segmentvars:kwargsbase = kwargsbase()):
+    """
+
+    #param
+    max_length = len(features) if ru.is_array(features) else 1
+    features = ru.param_itemize(param_s=features,maxlength = max_length,expectedtypes = str, defaultvalue = None)
+    updateparams = ru.param_itemize(param_s=updateparams,maxlength = max_length,expectedtypes = argsbase, defaultvalue = argsbase())
+    boxplotvariables = ru.param_itemize(param_s=boxplotvariables,maxlength = max_length,expectedtypes = kwargsbase, defaultvalue = kwargsbase())
+    percentiles = ru.param_itemize(param_s=percentiles,maxlength = max_length,expectedtypes = (list|np.ndarray) , defaultvalue = [25.0,75.0])
+     
+
+    #data
+    temp_plotparam = kwargsbase(**plotparam.kwargs)    
+    data = temp_plotparam.kwargs['data']
+    temp_plotparam.rmv('data')
+    axis,feature = temp_plotparam.kwargs.popitem()
+    
+
+    nrows = 1
+    ncols = ncols=wrap if len(features) > wrap else len(features)
+    for i in range(0,len(features)):
+        if(i>= wrap and i % wrap == 0):
+            nrows+=1 
+
+    fig,subfigs = plt.figure(figsize=figsize),[]
+    if(showhistogram):
+        nrows *= 2
+        grid_subfigs = fig.subfigures(nrows,ncols)
+        for k in range(0,nrows,2):
+                for j in range(0,ncols):
+                    subfigs.append([grid_subfigs[k],grid_subfigs[k+1]]) if len(grid_subfigs.shape)==1 else subfigs.append([grid_subfigs[k,j],grid_subfigs[k+1,j]])
+    else:
+        subfigs = fig.subfigures(nrows,ncols)    
+        subfigs =  subfigs.flatten() if hasattr(subfigs,'flatten') else subfigs if ru.is_array(subfigs) else [subfigs]
+
+    for _i, (_feature, _subfig) in enumerate(zip(features,subfigs)):
+        plotparam.kwargs[axis] = _feature
+        
+        if(showhistogram):
+            hst = SoPlot(plotparam=plotparam)
+            hst = hst.design(TransformParam(so.Bars(),so.Hist()))
+            hst = hst.update(*updateparams[_i].args) if len(updateparams[_i].args) > 0 else hst
+            hst = hst.plot(target=_subfig[1],pyplot=True)
+            for ax in _subfig[1].axes:
+                ax.axvline(np.mean(data[_feature]),color='red',linestyle = '--') if axis == 'x' else\
+                ax.axhline(np.mean(data[_feature]),color='red',linestyle = '--')
+                ax.axvline(np.median(data[_feature]),color='k',linestyle = '-') if axis == 'x' else\
+                ax.axhline(np.median(data[_feature]),color='k',linestyle = '-')
+        
+        box = boxplot(plotparam=plotparam,percentile=percentiles[_i],**boxplotvariables[_i].kwargs)
+        box = box.update(*updateparams[_i].args) if len (updateparams[_i].args) > 0 else box
+        box = box.plot(target = _subfig[0] if showhistogram else _subfig,pyplot = True)
+    
+    return fig
+
+
+def multi_plot(
+        plotparam:PlotParam,
+        features:list[str],
+        updateparams:list[kwargsbase],
+        boxplotvariables:list[kwargsbase],
+        percentiles=[[25,75]],
+        figsize = (6.4,4.8),
+        wrap = 3
+        ):
+    pass#TODO
