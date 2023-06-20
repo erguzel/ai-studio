@@ -341,58 +341,82 @@ def multi_boxplot(
     medianvars:kwargsbase = kwargsbase(color='gold'),
     segmentvars:kwargsbase = kwargsbase()):
     """
+    try:
+        #validate
+        if(len(plotparam.kwargs)!= 2 or 'data' not in plotparam.kwargs):
+            CoreException(
+                message='Along with data parameter, only one of x or y variable required with any value, to determine the orientation.',
+                dontThrow=False,
+                logIt= True,
+                shouldExit=True
+            ).act()
 
-    #param
-    max_length = len(features) if ru.is_array(features) else 1
-    features = ru.param_itemize(param_s=features,maxlength = max_length,expectedtypes = str, defaultvalue = None)
-    updateparams = ru.param_itemize(param_s=updateparams,maxlength = max_length,expectedtypes = argsbase, defaultvalue = argsbase())
-    boxplotvariables = ru.param_itemize(param_s=boxplotvariables,maxlength = max_length,expectedtypes = kwargsbase, defaultvalue = kwargsbase())
-    percentiles = ru.param_itemize(param_s=percentiles,maxlength = max_length,expectedtypes = (list|np.ndarray) , defaultvalue = [25.0,75.0])
-     
-
-    #data
-    temp_plotparam = kwargsbase(**plotparam.kwargs)    
-    data = temp_plotparam.kwargs['data']
-    temp_plotparam.rmv('data')
-    axis,feature = temp_plotparam.kwargs.popitem()
-    
-
-    nrows = 1
-    ncols = ncols=wrap if len(features) > wrap else len(features)
-    for i in range(0,len(features)):
-        if(i>= wrap and i % wrap == 0):
-            nrows+=1 
-
-    fig,subfigs = plt.figure(figsize=figsize),[]
-    if(showhistogram):
-        nrows *= 2
-        grid_subfigs = fig.subfigures(nrows,ncols)
-        for k in range(0,nrows,2):
-                for j in range(0,ncols):
-                    subfigs.append([grid_subfigs[k],grid_subfigs[k+1]]) if len(grid_subfigs.shape)==1 else subfigs.append([grid_subfigs[k,j],grid_subfigs[k+1,j]])
-    else:
-        subfigs = fig.subfigures(nrows,ncols)    
-        subfigs =  subfigs.flatten() if hasattr(subfigs,'flatten') else subfigs if ru.is_array(subfigs) else [subfigs]
-
-    for _i, (_feature, _subfig) in enumerate(zip(features,subfigs)):
-        plotparam.kwargs[axis] = _feature
+        #param
+        max_length = len(features) if ru.is_array(features) else 1
+        features = ru.param_itemize(param_s=features,maxlength = max_length,expectedtypes = str, defaultvalue = None)
+        updateparams = ru.param_itemize(param_s=updateparams,maxlength = max_length,expectedtypes = argsbase, defaultvalue = argsbase())
+        boxplotvariables = ru.param_itemize(param_s=boxplotvariables,maxlength = max_length,expectedtypes = kwargsbase, defaultvalue = kwargsbase())
+        percentiles = ru.param_itemize(param_s=percentiles,maxlength = max_length,expectedtypes = (list|np.ndarray) , defaultvalue = [25.0,75.0])
         
+
+        #data
+        temp_plotparam = kwargsbase(**plotparam.kwargs)    
+        data = temp_plotparam.kwargs['data']
+        temp_plotparam.rmv('data')
+        axis,feature = temp_plotparam.kwargs.popitem()
+        
+        #grid
+        nrows = 1
+        ncols = ncols=wrap if len(features) > wrap else len(features)
+        for i in range(0,len(features)):
+            if(i>= wrap and i % wrap == 0):
+                nrows+=1 
+
+        fig,subfigs = plt.figure(figsize=figsize),[]
         if(showhistogram):
-            hst = SoPlot(plotparam=plotparam)
-            hst = hst.design(TransformParam(so.Bars(),so.Hist()))
-            hst = hst.update(*updateparams[_i].args) if len(updateparams[_i].args) > 0 else hst
-            hst = hst.plot(target=_subfig[1],pyplot=True)
-            for ax in _subfig[1].axes:
-                ax.axvline(np.mean(data[_feature]),color='red',linestyle = '--') if axis == 'x' else\
-                ax.axhline(np.mean(data[_feature]),color='red',linestyle = '--')
-                ax.axvline(np.median(data[_feature]),color='k',linestyle = '-') if axis == 'x' else\
-                ax.axhline(np.median(data[_feature]),color='k',linestyle = '-')
+            nrows *= 2
+            grid_subfigs = fig.subfigures(nrows,ncols)
+            for k in range(0,nrows,2):
+                    for j in range(0,ncols):
+                        subfigs.append([grid_subfigs[k],grid_subfigs[k+1]]) if len(grid_subfigs.shape)==1 else subfigs.append([grid_subfigs[k,j],grid_subfigs[k+1,j]])
+        else:
+            subfigs = fig.subfigures(nrows,ncols)    
+            subfigs =  subfigs.flatten() if hasattr(subfigs,'flatten') else subfigs if ru.is_array(subfigs) else [subfigs]
+
+        #plot
+        for _i, (_feature, _subfig) in enumerate(zip(features,subfigs)):
+            plotparam.kwargs[axis] = _feature
+            
+            if(showhistogram):
+                hst = SoPlot(plotparam=plotparam)
+                hst = hst.design(TransformParam(so.Bars(),so.Hist()))
+                hst = hst.update(*updateparams[_i].args) if len(updateparams[_i].args) > 0 else hst
+                hst = hst.plot(target=_subfig[1],pyplot=True)
+                for ax in _subfig[1].axes:
+                    ax.axvline(np.mean(data[_feature]),color='red',linestyle = '--') if axis == 'x' else\
+                    ax.axhline(np.mean(data[_feature]),color='red',linestyle = '--')
+                    ax.axvline(np.median(data[_feature]),color='k',linestyle = '-') if axis == 'x' else\
+                    ax.axhline(np.median(data[_feature]),color='k',linestyle = '-')
+            
+            box = boxplot(plotparam=plotparam,percentile=percentiles[_i],**boxplotvariables[_i].kwargs)
+            box = box.update(*updateparams[_i].args) if len (updateparams[_i].args) > 0 else box
+            box = box.plot(target = _subfig[0] if showhistogram else _subfig,pyplot = True)
         
-        box = boxplot(plotparam=plotparam,percentile=percentiles[_i],**boxplotvariables[_i].kwargs)
-        box = box.update(*updateparams[_i].args) if len (updateparams[_i].args) > 0 else box
-        box = box.plot(target = _subfig[0] if showhistogram else _subfig,pyplot = True)
-    
-    return fig
+        return fig
+
+    except Exception as e:
+        (
+            CoverException(
+                message='Plotting failed. Check below hints.',
+                cause= e,
+                dontThrow=False,
+                logIt=True,
+                shouldExit=True
+                )
+                .adddata('*','Function is partially type safe. Follow the parameter type hints')
+                .adddata('**','Only one, either x or y parameter is expected in PlotParam constructor to determine the orientation. The value does not matter for it will be overriden')
+                .act()
+        )
 
 
 def multi_plot(
