@@ -104,7 +104,7 @@ class ThemeParam(argsbase):
 
 # TODO: check overriding params in add behaves
 
-class SoPlotter():
+class SoPlot():
     #__plotparam__ = None
     #__plot__ = None
     #__plotter__ = None
@@ -200,6 +200,8 @@ class SoPlotter():
         return self.__axes__
 
     
+
+
 ########################################################################
 
 def boxplot(plotparam:PlotParam,
@@ -233,7 +235,7 @@ def boxplot(plotparam:PlotParam,
     segmentvars= boxplotvariables['segmentvars'] if 'segmentvars' in boxplotvariables else  kwargsbase()
 
 
-    sp =  SoPlotter(
+    sp =  SoPlot(
               plotparam=plotparam
                       ).design(
             TransformParam( ## observation points
@@ -291,7 +293,7 @@ def boxplot_hist(
     linedata.rmv('data')
     axis,feature = linedata.kwargs.popitem()
 
-    hst = SoPlotter(plotparam=plotparam)
+    hst = SoPlot(plotparam=plotparam)
     hst = hst.design(TransformParam(so.Bars(),so.Hist()))
     hst = hst.update(*updateparams) if len(updateparams) > 0 else hst
     hst = hst.plot(target=sfigs[1],pyplot=True)
@@ -307,14 +309,15 @@ def boxplot_hist(
    
     return fig
 
-def multi_boxplot_hist(
+def multi_boxplot(
             plotparam:PlotParam,
             features:list[str],
             updateparams:list[kwargsbase],
             boxplotvariables:list[kwargsbase],
-            percentile=[25,75],
+            percentiles=[[25,75]],
             figsize = (6.4,4.8),
             wrap = 3,
+            showhistogram = False
             ):
     """
     updateparams: kwargsbase i.e LayoutParam(), ScaleParam() etc
@@ -337,16 +340,27 @@ def multi_boxplot_hist(
 
     fig = plt.figure(figsize=figsize)
     sfigs = fig.subfigures(nrows,ncols)
+    sfigs = sfigs.flatten() if hasattr(sfigs,'flatten') else\
+          sfigs if ru.is_array(sfigs) else [sfigs]
     linedata = kwargsbase(**plotparam.kwargs)    
     data = linedata.kwargs['data']
     linedata.rmv('data')
     axis,feature = linedata.kwargs.popitem()
     
-    for i in range(0,nrows):
-        for j in range(0,ncols):
-            sfig = sfigs[i,j]
-            raise TypeError('Not implemented yet') ##TODO
+    for sfig in sfigs:
+        pass ##TODO
 
+
+def multiplot(
+        plotparam:PlotParam,
+        features:list[str],
+        updateparams:list[kwargsbase],
+        boxplotvariables:list[kwargsbase],
+        percentiles=[[25,75]],
+        figsize = (6.4,4.8),
+        wrap = 3
+        ):
+    pass#TODO
 
 
 def add_barlabel(figure):
