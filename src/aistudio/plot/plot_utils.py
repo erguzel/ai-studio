@@ -272,7 +272,7 @@ def boxplot_hist(
     hst = SoPlot(plotparam=plotparam)
     hst = hst.design(TransformParam(so.Bars(),so.Hist()))
     hst = hst.update(*updateparams) if len(updateparams) > 0 else hst
-    hst = hst.plot(target=sfigs[1],pyplot=True)
+    hst = hst.plot(target=sfigs[1])
     for ax in sfigs[1].axes:
         ax.axvline(np.mean(data[feature]),color='red',linestyle = '--') if axis == 'x' else\
         ax.axhline(np.mean(data[feature]),color='red',linestyle = '--')
@@ -281,7 +281,7 @@ def boxplot_hist(
  
     bp = boxplot(plotparam=plotparam,percentile=percentile,**boxplotvariables)
     bp = bp.update(*updateparams) if len(updateparams) > 0 else bp
-    bp = bp.plot(target=sfigs[0],pyplot=True)
+    bp = bp.plot(target=sfigs[0])
    
     return fig
 
@@ -391,7 +391,7 @@ def multi_boxplot(
                 hst = SoPlot(plotparam=plotparam)
                 hst = hst.design(TransformParam(so.Bars(),so.Hist()))
                 hst = hst.update(*updateparams[_i].args) if len(updateparams[_i].args) > 0 else hst
-                hst = hst.plot(target=_subfig[1],pyplot=True)
+                hst = hst.plot(target=_subfig[1])
                 for ax in _subfig[1].axes:
                     ax.axvline(np.mean(data[_feature]),color='red',linestyle = '--') if axis == 'x' else\
                     ax.axhline(np.mean(data[_feature]),color='red',linestyle = '--')
@@ -400,7 +400,7 @@ def multi_boxplot(
             
             box = boxplot(plotparam=plotparam,percentile=percentiles[_i],**boxplotvariables[_i].kwargs)
             box = box.update(*updateparams[_i].args) if len (updateparams[_i].args) > 0 else box
-            box = box.plot(target = _subfig[0] if showhistogram else _subfig,pyplot = True)
+            box = box.plot(target = _subfig[0] if showhistogram else _subfig)
         
         return fig
 
