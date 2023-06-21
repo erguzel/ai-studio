@@ -213,7 +213,7 @@ def boxplot(plotparam:PlotParam,
 
     sp =  SoPlot(
               plotparam=temp_plotparam
-                      ).design(
+        ).design(
             TransformParam( ## observation points
             so.Dot(**obsvars.kwargs),so.Jitter(**jittervars.kwargs),**segmentvars.kwargs,
             )
@@ -264,10 +264,10 @@ def boxplot_hist(
 
     fig = plt.figure(figsize=figsize)
     sfigs = fig.subfigures(2,1)
-    metadata = kwargsbase(**plotparam.kwargs)    
-    data = metadata.kwargs['data']
-    metadata.rmv('data')
-    axis,feature = metadata.kwargs.popitem()
+    temp_plotparam = kwargsbase(**plotparam.kwargs)    
+    data = temp_plotparam.kwargs['data']
+    temp_plotparam.rmv('data')
+    axis,feature = temp_plotparam.kwargs.popitem()
 
     hst = SoPlot(plotparam=plotparam)
     hst = hst.design(TransformParam(so.Bars(),so.Hist()))
@@ -284,40 +284,6 @@ def boxplot_hist(
     bp = bp.plot(target=sfigs[0])
    
     return fig
-
-def add_barlabel(figure):
-    """
-    This function adds bar labels to a barplot.
-    designed for plots created with seaborn objects api interface
-    make sure that the used Mark object is Bar() instead of Bars() 
-    Parameters
-
-    plotobject : barplot
-    numberoflayers : int
-    """
-    try:
-        axes = figure.figure.axes
-        for j in range(len(axes)):
-            ax0 = axes[j]
-            ax0_containers = ax0.containers
-            for i in range(len(ax0_containers)):
-                cnt = ax0_containers[i]
-                ax0.bar_label(cnt)
-        return figure
-    except Exception as e:
-        (
-            CoverException(
-            'Barlabel could not be added to the barplot',
-            cause=e,
-            logIt=True,
-            shouldExit=True,
-            dontThrow=True
-            )
-            .adddata('plotobject', figure)
-            .adddata('__WARN__','Check number of (sub)figures and the number of axes. Make sure that the used Mark object is Bar() instead of Bars()')
-            .act()
-        )
-
 
 def multi_boxplot(
             plotparam:PlotParam,
@@ -344,12 +310,7 @@ def multi_boxplot(
     try:
         #validate
         if(len(plotparam.kwargs)!= 2 or 'data' not in plotparam.kwargs):
-            CoreException(
-                message='Along with data parameter, only one of x or y variable required with any value, to determine the orientation.',
-                dontThrow=False,
-                logIt= True,
-                shouldExit=True
-            ).act()
+            CoreException(message='Along with data parameter, only one of x or y variable required with any value, to determine the orientation.',logIt= True,).act()
 
         #param
         max_length = len(features) if ru.is_array(features) else 1
@@ -385,6 +346,7 @@ def multi_boxplot(
 
         #plot
         for _i, (_feature, _subfig) in enumerate(zip(features,subfigs)):
+            
             plotparam.kwargs[axis] = _feature
             
             if(showhistogram):
@@ -409,9 +371,7 @@ def multi_boxplot(
             CoverException(
                 message='Plotting failed. Check below hints.',
                 cause= e,
-                dontThrow=False,
                 logIt=True,
-                shouldExit=True
                 )
                 .adddata('*','Function is partially type safe. Follow the parameter type hints')
                 .adddata('**','Only one, either x or y parameter is expected in PlotParam constructor to determine the orientation. The value does not matter for it will be overriden')
@@ -421,11 +381,82 @@ def multi_boxplot(
 
 def multi_plot(
         plotparam:PlotParam,
-        features:list[str],
-        updateparams:list[kwargsbase],
-        boxplotvariables:list[kwargsbase],
-        percentiles=[[25,75]],
+        features,
+        designparams:argsbase,
+        layerparams : list[argsbase]=[],
+        updateparams:list[argsbase]=[],
         figsize = (6.4,4.8),
-        wrap = 3
+        layout = 'tight',
+        wrap = 3,
         ):
-    pass#TODO
+    """
+    give only (x or y) and data with valid values in PlotParam. Other axis will be features array.
+    """
+    
+    #validate TODO
+    ##
+
+    #param
+    max_length = len(features) if ru.is_array(features) else 1
+    features = ru.param_itemize(param_s=features,maxlength = max_length,expectedtypes = str, defaultvalue = None)
+    designparams = ru.param_itemize_type(param_t=designparams,maxlength = max_length,expectedtypes = TransformParam)
+    layerparams = ru.param_itemize(param_s=layerparams,maxlength=max_length,expectedtypes=(argsbase,argskwargssbase),defaultvalue=None)
+    updateparams = ru.param_itemize(param_s=updateparams,maxlength = max_length,expectedtypes = argsbase, defaultvalue = argsbase())
+     
+    #data
+    temp_plotparam = kwargsbase(**plotparam.kwargs)    
+    temp_plotparam.rmv('data')
+    axis,feature = temp_plotparam.kwargs.popitem()
+    otheraxis = 'y' if axis == 'x' else 'x'
+        
+    #grid
+    nrows = 1
+    ncols = ncols=wrap if len(features) > wrap else len(features)
+    for i in range(0,len(features)):
+        if(i>= wrap and i % wrap == 0):
+            nrows+=1  
+
+    fig = plt.figure(figsize=figsize,layout = layout)
+    subfigs = fig.subfigures(nrows,ncols)    
+    subfigs =  subfigs.flatten() if hasattr(subfigs,'flatten') else subfigs if ru.is_array(subfigs) else [subfigs]
+    
+    soplt = SoPlot(plotparam=plotparam)
+    for _i, (_feature, _subfig, layer) in enumerate(zip(features,subfigs,layerparams)):
+    
+        plotparam.kwargs[otheraxis] = _feature   
+        soplt = soplt.design(designparams[_i])
+        if layer:
+            for lp in layer.args:
+                soplt = soplt.addLayer(lp) if lp else soplt
+
+        soplt = soplt.update(*updateparams[_i].args) if len(updateparams[_i].args) > 0 else soplt  
+        soplt = soplt.plot(target = _subfig)
+        
+    return fig
+
+def add_barlabel(figure):
+    """
+    This function adds bar labels to a barplot.
+    designed for plots created with seaborn objects api interface
+    make sure that the used Mark object is Bar() instead of Bars() 
+    Parameters
+
+    plotobject : barplot
+    numberoflayers : int
+    """
+    try:
+        axes = figure.figure.axes
+        for j in range(len(axes)):
+            ax0 = axes[j]
+            ax0_containers = ax0.containers
+            for i in range(len(ax0_containers)):
+                cnt = ax0_containers[i]
+                ax0.bar_label(cnt)
+        return figure
+    except Exception as e:
+        (
+            CoverException('Barlabel could not be added to the barplot',cause=e,logIt=True)
+            .adddata('plotobject', figure)
+            .adddata('__WARN__','Check number of (sub)figures and the number of axes. Make sure that the used Mark object is Bar() instead of Bars()')
+            .act()
+        )
