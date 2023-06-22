@@ -9,6 +9,136 @@ from aistudio.abstraction.base_types import *
 
 
 
+# plot
+# argskwargsbase
+class PlotParam(argskwargssbase):
+    def __init__(self,*args, **kwargs):
+        argsbase.__init__(self,*args)
+        kwargsbase.__init__(self,**kwargs)
+            
+# Design
+# Layer
+# argskwargsbase
+class TransformParam(argskwargssbase):
+    def __init__(self,*args,**kwargs):
+        argsbase.__init__(self,*args)
+        kwargsbase.__init__(self,**kwargs)
+
+##Update
+## kwargsbase
+
+class ScaleParam(kwargsbase):
+    def __init__(self,**kwargs):    
+        super().__init__(**kwargs)
+
+class FacetParam(kwargsbase):
+    def __init__(self,**kwargs):
+        super().__init__(**kwargs)   
+
+class PairParam(kwargsbase):
+    def __init__(self,**kwargs):
+        super().__init__(**kwargs)   
+
+class LayoutParam(kwargsbase):
+    def __init__(self,**kwargs):
+        super().__init__(**kwargs)  
+
+class LabelParam(kwargsbase):
+    def __init__(self,**kwargs):
+        super().__init__(**kwargs)  
+
+class LimitParam(kwargsbase):
+    def __init__(self,**kwargs):
+        super().__init__(**kwargs)  
+
+class ShareParam(kwargsbase):
+    def __init__(self,**kwargs):
+        super().__init__(**kwargs)  
+# update
+# argsbase
+class ThemeParam(argsbase):
+    def __init__(self,*args):
+        super().__init__(*args) 
+
+class SoPlot():
+
+    def __init__(self,plotparam:PlotParam):
+        self.__plotparam__ = plotparam
+
+    def design (self,
+        transformparam:TransformParam =TransformParam(),
+        scaleparam:ScaleParam = ScaleParam(),
+        facetparam:FacetParam = FacetParam(),
+        pairparam:PairParam = PairParam(),
+        layoutparam:LayoutParam = LayoutParam(),
+        labelparam:LabelParam = LabelParam(),
+        limitparam:LimitParam = LimitParam(),
+        shareparam:ShareParam = ShareParam(),
+        themeparam:ThemeParam=ThemeParam(())):
+        
+        self.__plot__ = so.Plot(**self.__plotparam__.kwargs)
+        self.__plot__ = self.__plot__.add(*transformparam.args,**transformparam.kwargs)
+        self.__plot__ = self.__plot__.scale(**scaleparam.kwargs)
+        self.__plot__ = self.__plot__.facet(**facetparam.kwargs)  
+        self.__plot__ = self.__plot__.pair(**pairparam.kwargs)
+        self.__plot__ = self.__plot__.layout(**layoutparam.kwargs)
+        self.__plot__ = self.__plot__.label(**labelparam.kwargs)
+        self.__plot__ = self.__plot__.limit(**limitparam.kwargs)
+        self.__plot__ = self.__plot__.share(**shareparam.kwargs)
+        self.__plot__ = self.__plot__.theme(*themeparam.args)
+
+        return self 
+       
+    def update(self,*args:kwargsbase|argsbase|kwargsbase):
+
+        for arg in args:
+            if not check_type(arg,(argsbase,kwargsbase,argskwargssbase),typecheckmode=TypeCheckMode.SUBTYPE):
+                CoreException(
+                    message='Update arguments must be of base types, argsbase, kwargsbase, argskwargssbase',
+                    cause=None,
+                    logIt=True).act()
+            if (check_type(arg,ScaleParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+                self.__plot__ = self.__plot__.scale(**arg.kwargs)
+            elif (check_type(arg,FacetParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+                self.__plot__ = self.__plot__.facet(**arg.kwargs)
+            elif (check_type(arg,PairParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+                self.__plot__ = self.__plot__.pair(**arg.kwargs)
+            elif (check_type(arg,LayoutParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+                self.__plot__ = self.__plot__.layout(**arg.kwargs)
+            elif (check_type(arg,LabelParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+                self.__plot__ = self.__plot__.label(**arg.kwargs)
+            elif (check_type(arg,LimitParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+                self.__plot__ = self.__plot__.limit(**arg.kwargs)
+            elif (check_type(arg,ShareParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+                self.__plot__ = self.__plot__.share(**arg.kwargs)
+            elif (check_type(arg,ThemeParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+                self.__plot__ = self.__plot__.theme(*arg.args)
+            else:
+                print('TODO line 158 ',__file__)
+                pass# TODO
+        
+        return self
+
+    def addLayer(self,transformparam:TransformParam):
+        self.__plot__ = self.__plot__.add(*transformparam.args,**transformparam.kwargs)
+        return self
+
+    def plot(self,pyplot=False,target = None):
+        self.__plot__ = self.__plot__.on(target) if target else self.__plot__
+        self.__plotter__ = self.__plot__.plot(pyplot=pyplot)
+        return self
+    
+    def get_plotter(self,pyplot = False):
+         if(self.__plotter__ ):   
+            return self.__plotter__
+         
+         self.__plotter__ = self.__plot__.plot(pyplot=pyplot)
+         return self.__plotter__
+
+
+
+
+
 
 def MONTH_NAMES():
     """
@@ -48,7 +178,7 @@ def boxplot(plotparam:PlotParam,
             **boxplotvariables:kwargsbase):
     """
     obsvars:kwargsbase = kwargsbase(pointsize=0.5),
-    jittervars:kwargsbase = kwargsbase(width=0.5),
+    jittervars:kwargsbase = kwargsbase(width=0.5)e,
     boxvars : kwargsbase = kwargsbase(color='k',linewidth=15),
     outliervars:kwargsbase = kwargsbase(color='r',linewidth=5),
     meanvars :kwargsbase = kwargsbase(color='green',linestyle='--'),
@@ -155,15 +285,15 @@ def boxplot_hist(
 def multi_boxplot(
             plotparam:PlotParam,
             features:argsbase,
-            boxplotvariables:argsbase = argsbase(),#kwargsbase()
-            updateparams:argsbase = argsbase(),#kwargsbase()
+            boxplotvariables:argsbase = argsbase(),#argsbase(kwargsbase(),...)
+            updateparams:argsbase = argsbase(),#argsbase(argsbase(kwargsbase),...)
             percentiles:argsbase = argsbase(),#[25,75]
             figsize = (6.4,4.8),
             wrap = 3,
             showhistogram = False
             ):
     """
-    updateparams: kwargsbase i.e LayoutParam(), ScaleParam() etc
+    updateparams: i.e LayoutParam(), ScaleParam() etc
 
     boxplot variables :
     obsvars:kwargsbase = kwargsbase(pointsize=0.5),
@@ -180,12 +310,13 @@ def multi_boxplot(
             CoreException(message='Along with data parameter, only one of x or y variable required with any value, to determine the orientation.',logIt= True,).act()
 
         #param
-        max_length = len(features) if ru.is_array(features) else 1
-        features = ru.param_itemize(param_s=features,maxlength = max_length,expectedtypes = str, defaultvalue = None)
-        updateparams = ru.param_itemize(param_s=updateparams,maxlength = max_length,expectedtypes = argsbase, defaultvalue = argsbase())
-        boxplotvariables = ru.param_itemize(param_s=boxplotvariables,maxlength = max_length,expectedtypes = kwargsbase, defaultvalue = kwargsbase())
-        percentiles = ru.param_itemize(param_s=percentiles,maxlength = max_length,expectedtypes = (list|np.ndarray) , defaultvalue = [25.0,75.0])
-        
+        max_length = len(features.args)
+
+        features = ru.parametize_argsbase(features,None,max_length)
+        boxplotvariables = ru.parametize_argsbase(boxplotvariables,kwargsbase(),max_length)
+        updateparams = ru.parametize_argsbase(updateparams,argsbase(kwargsbase()),max_length)
+        percentiles = ru.parametize_argsbase(percentiles,[25,75],max_length)
+ 
 
         #data
         temp_plotparam = kwargsbase(**plotparam.kwargs)    
@@ -195,8 +326,8 @@ def multi_boxplot(
         
         #grid
         nrows = 1
-        ncols = ncols=wrap if len(features) > wrap else len(features)
-        for i in range(0,len(features)):
+        ncols = ncols=wrap if max_length > wrap else max_length
+        for i in range(0,max_length):
             if(i>= wrap and i % wrap == 0):
                 nrows+=1 
 
@@ -212,14 +343,14 @@ def multi_boxplot(
             subfigs =  subfigs.flatten() if hasattr(subfigs,'flatten') else subfigs if ru.is_array(subfigs) else [subfigs]
 
         #plot
-        for _i, (_feature, _subfig) in enumerate(zip(features,subfigs)):
+        for _i, (_feature, _subfig) in enumerate(zip(features.args,subfigs)):
             
             plotparam.kwargs[axis] = _feature
             
             if(showhistogram):
                 hst = SoPlot(plotparam=plotparam)
                 hst = hst.design(TransformParam(so.Bars(),so.Hist()))
-                hst = hst.update(*updateparams[_i].args) if len(updateparams[_i].args) > 0 else hst
+                hst = hst.update(*updateparams.args[_i].args)
                 hst = hst.plot(target=_subfig[1])
                 for ax in _subfig[1].axes:
                     ax.axvline(np.mean(data[_feature]),color='red',linestyle = '--') if axis == 'x' else\
@@ -227,8 +358,8 @@ def multi_boxplot(
                     ax.axvline(np.median(data[_feature]),color='k',linestyle = '-') if axis == 'x' else\
                     ax.axhline(np.median(data[_feature]),color='k',linestyle = '-')
             
-            box = boxplot(plotparam=plotparam,percentile=percentiles[_i],**boxplotvariables[_i].kwargs)
-            box = box.update(*updateparams[_i].args) if len (updateparams[_i].args) > 0 else box
+            box = boxplot(plotparam=plotparam,percentile=percentiles.args[_i],**boxplotvariables.args[_i].kwargs)
+            box = box.update(*updateparams.args[_i].args)
             box = box.plot(target = _subfig[0] if showhistogram else _subfig)
         
         return fig
