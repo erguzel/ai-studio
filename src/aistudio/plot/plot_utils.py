@@ -7,7 +7,9 @@ import aistudio.runtime.runtime_utils as ru
 import aistudio.statistics.stats_utils as su
 from aistudio.abstraction.base_types import *
 
-
+######################
+## Types
+######################
 
 # plot
 # argskwargsbase
@@ -135,10 +137,9 @@ class SoPlot():
          self.__plotter__ = self.__plot__.plot(pyplot=pyplot)
          return self.__plotter__
 
-
-
-
-
+####################
+## Globals
+####################
 
 def MONTH_NAMES():
     """
@@ -154,7 +155,8 @@ def WEEK_DAYS():
 
 def encoder_function(keyOrValue,encoder_dict):
     """
-    This function retursns key or value depending is which one is passed. Otherwise it returns given keyOrValue parameter.  Dictionary keys and values must be unique.
+    This function retursns key or value depending is which one is passed. Otherwise it returns given keyOrValue parameter.  
+    Dictionary keys and values must be unique.
 
     Parameters
 
@@ -169,11 +171,37 @@ def encoder_function(keyOrValue,encoder_dict):
     return keyOrValue
 
 ################################
+## Functs
+################################
 
+def add_barlabel(figure):
+    """
+    This function adds bar labels to a barplot.
+    designed for plots created with seaborn objects api interface
+    make sure that the used Mark object is Bar() instead of Bars() 
+    Parameters
 
-########################################################################
+    plotobject : barplot
+    numberoflayers : int
+    """
+    try:
+        axes = figure.figure.axes
+        for j in range(len(axes)):
+            ax0 = axes[j]
+            ax0_containers = ax0.containers
+            for i in range(len(ax0_containers)):
+                cnt = ax0_containers[i]
+                ax0.bar_label(cnt)
+        return figure
+    except Exception as e:
+        (
+            CoverException('Barlabel could not be added to the barplot',cause=e,logIt=True)
+            .adddata('plotobject', figure)
+            .adddata('__WARN__','Check number of (sub)figures and the number of axes. Make sure that the used Mark object is Bar() instead of Bars()')
+            .act()
+        )
 
-def boxplot_adv(plotparam:PlotParam,
+def boxplot(plotparam:PlotParam,
             percentile = [25.0,75.0],
             dotvars : kwargsbase = kwargsbase(pointsize=0.5),
             jittervars : kwargsbase = kwargsbase(width=0.5),
@@ -199,8 +227,11 @@ def boxplot_adv(plotparam:PlotParam,
     temp_plotparam.kwargs[otheraxis] = np.full(data.shape[0],'obs')
     temp_plotparam.kwargs['data'] = data
 
-    designtransform = TransformParam(so.Dot(**dotvars.kwargs),so.Jitter(**jittervars.kwargs),**segmentvars.kwargs) if  dotview else\
-                        TransformParam(so.Dash(**dashvars.kwargs),so.Dodge(**dodgevars.kwargs),**segmentvars.kwargs) 
+    designtransform = (
+        TransformParam(so.Dot(**dotvars.kwargs),so.Jitter(**jittervars.kwargs),**segmentvars.kwargs) 
+            if  dotview else
+        TransformParam(so.Dash(**dashvars.kwargs),so.Dodge(**dodgevars.kwargs),**segmentvars.kwargs) 
+    )
 
     sp =  SoPlot(
               plotparam=temp_plotparam
@@ -229,140 +260,30 @@ def boxplot_adv(plotparam:PlotParam,
         )
     return sp
     
-
-
-
-def boxplot(plotparam:PlotParam,
-            percentile = [25.0,75.0],
-            **boxplotvariables:kwargsbase):
-    """
-    obsvars:kwargsbase = kwargsbase(pointsize=0.5),
-    jittervars:kwargsbase = kwargsbase(width=0.5)e,
-    boxvars : kwargsbase = kwargsbase(color='k',linewidth=15),
-    outliervars:kwargsbase = kwargsbase(color='r',linewidth=5),
-    meanvars :kwargsbase = kwargsbase(color='green',linestyle='--'),
-    medianvars:kwargsbase = kwargsbase(color='gold'),
-    segmentvars:kwargsbase = kwargsbase()):
-    """
-
-    ##TODO check only x or y provided
-
-    temp_plotparam = kwargsbase(**plotparam.kwargs)
-    data = temp_plotparam.kwargs['data']    
-    temp_plotparam.rmv('data')
-    axis,feature = temp_plotparam.kwargs.popitem()
-    otheraxis = 'y' if axis == 'x' else 'x'
-    
-    temp_plotparam.kwargs[axis] = feature
-    temp_plotparam.kwargs[otheraxis] = np.full(data.shape[0],'obs')
-    temp_plotparam.kwargs['data'] = data
-    
-
-    obsvars = boxplotvariables['obsvars'] if 'obsvars' in boxplotvariables else  kwargsbase(pointsize=0.5)
-    jittervars = boxplotvariables['jittervars'] if 'jittervars' in boxplotvariables else  kwargsbase(width=0.5)
-    boxvars= boxplotvariables['boxvars'] if 'boxvars' in boxplotvariables else  kwargsbase(color='k',linewidth=15)
-    outliervars= boxplotvariables['outliervars'] if 'outliervars' in boxplotvariables else  kwargsbase(color='r',linewidth=5)
-    meanvars= boxplotvariables['meanvars'] if 'meanvars' in boxplotvariables else  kwargsbase(color='red',linestyle='--')
-    medianvars= boxplotvariables['medianvars'] if 'medianvars' in boxplotvariables else  kwargsbase(color='k')
-    segmentvars= boxplotvariables['segmentvars'] if 'segmentvars' in boxplotvariables else  kwargsbase()
-
-
-    sp =  SoPlot(
-              plotparam=temp_plotparam
-        ).design(
-            TransformParam( ## observation points
-            so.Dot(**obsvars.kwargs),so.Jitter(**jittervars.kwargs),**segmentvars.kwargs,
-            )
-        ).addLayer(## percentile box
-            TransformParam(
-            so.Range(**boxvars.kwargs),so.Perc(percentile)
-            )
-        ).addLayer( ## outlier range
-            TransformParam(
-            so.Range(**outliervars.kwargs), so.Perc(su.get_outlier_range(data[feature],percentile))
-            )
-        ).addLayer(## outlier range ends
-            TransformParam(
-            so.Dash(**outliervars.kwargs),so.Perc(su.get_outlier_range(data[feature],percentile))
-            )
-        ).addLayer(## meanline
-            TransformParam(
-                so.Dash(**meanvars.kwargs),so.Agg('mean')
-            )
-        ).addLayer(## medianline
-            TransformParam(
-                so.Dash(**medianvars.kwargs),so.Agg('median')
-            ) 
-        )
-    return sp
-    
-def boxplot_hist(
-        plotparam:PlotParam,
-        *updateparams:kwargsbase,
-        percentile=[25,75],
-        figsize = (6.4,4.8), 
-        **boxplotvariables:kwargsbase
-        ):
-    """
-    updateparams: kwargsbase i.e LayoutParam(), ScaleParam() etc
-
-    boxplot variables :
-    obsvars:kwargsbase = kwargsbase(pointsize=0.5),
-    jittervars:kwargsbase = kwargsbase(width=0.5),
-    boxvars : kwargsbase = kwargsbase(color='k',linewidth=15),
-    outliervars:kwargsbase = kwargsbase(color='r',linewidth=5),
-    meanvars :kwargsbase = kwargsbase(color='green',linestyle='--'),
-    medianvars:kwargsbase = kwargsbase(color='gold'),
-    segmentvars:kwargsbase = kwargsbase()):
-    """
-
-    ## TODO check only x or y allowed
-
-    fig = plt.figure(figsize=figsize)
-    sfigs = fig.subfigures(2,1)
-    temp_plotparam = kwargsbase(**plotparam.kwargs)    
-    data = temp_plotparam.kwargs['data']
-    temp_plotparam.rmv('data')
-    axis,feature = temp_plotparam.kwargs.popitem()
-
-    hst = SoPlot(plotparam=plotparam)
-    hst = hst.design(TransformParam(so.Bars(),so.Hist()))
-    hst = hst.update(*updateparams) if len(updateparams) > 0 else hst
-    hst = hst.plot(target=sfigs[1])
-    for ax in sfigs[1].axes:
-        ax.axvline(np.mean(data[feature]),color='red',linestyle = '--') if axis == 'x' else\
-        ax.axhline(np.mean(data[feature]),color='red',linestyle = '--')
-        ax.axvline(np.median(data[feature]),color='k',linestyle = '-') if axis == 'x' else\
-        ax.axhline(np.median(data[feature]),color='k',linestyle = '-')
- 
-    bp = boxplot(plotparam=plotparam,percentile=percentile,**boxplotvariables)
-    bp = bp.update(*updateparams) if len(updateparams) > 0 else bp
-    bp = bp.plot(target=sfigs[0])
-   
-    return fig
-
 def multi_boxplot(
             plotparam:PlotParam,
             features:argsbase,
-            boxplotvariables:argsbase = argsbase(),#argsbase(kwargsbase(),...)
-            updateparams:argsbase = argsbase(),#argsbase(argsbase(kwargsbase),...)
-            percentiles:argsbase = argsbase(),#[25,75]
+            percentiles:argsbase = argsbase([25,75]),
+            dotvars:argsbase = argsbase(kwargsbase(pointsize=0.5)),
+            jittervars:argsbase = argsbase(kwargsbase(width=0.5)),
+            dashvars:argsbase = argsbase(kwargsbase()),
+            dodgevars:argsbase = argsbase(kwargsbase()),
+            percboxvars:argsbase = argsbase(kwargsbase(color='k',linewidth=15)),
+            outlierrangevars:argsbase = argsbase(kwargsbase(color='r',linewidth=5)),
+            meanvars:argsbase = argsbase(kwargsbase(color='red',linestyle='--')),
+            medianvars:argsbase = argsbase(kwargsbase(color='k')),
+            segmentvars:argsbase = argsbase(kwargsbase()),
+            dotview = argsbase(False),
+            updateparams:argsbase = argsbase(argsbase(kwargsbase())),
+            histvars:argsbase = argsbase(TransformParam(so.Bars(),so.Hist())),
+            kdevars:argsbase=argsbase(TransformParam(so.Line(),so.KDE())),
             figsize = (6.4,4.8),
             wrap = 3,
-            showhistogram = False
+            showhistogram=False,
+            showstatslines = True,
+            showkde = False,
+            
             ):
-    """
-    updateparams: i.e LayoutParam(), ScaleParam() etc
-
-    boxplot variables :
-    obsvars:kwargsbase = kwargsbase(pointsize=0.5),
-    jittervars:kwargsbase = kwargsbase(width=0.5),
-    boxvars : kwargsbase = kwargsbase(color='k',linewidth=15),
-    outliervars:kwargsbase = kwargsbase(color='r',linewidth=5),
-    meanvars :kwargsbase = kwargsbase(color='green',linestyle='--'),
-    medianvars:kwargsbase = kwargsbase(color='gold'),
-    segmentvars:kwargsbase = kwargsbase()):
-    """
     try:
         #validate
         if(len(plotparam.kwargs)!= 2 or 'data' not in plotparam.kwargs):
@@ -372,10 +293,20 @@ def multi_boxplot(
         max_length = len(features.args)
 
         features = ru.parametize_argsbase(features,None,max_length)
-        boxplotvariables = ru.parametize_argsbase(boxplotvariables,kwargsbase(),max_length)
-        updateparams = ru.parametize_argsbase(updateparams,argsbase(kwargsbase()),max_length)
         percentiles = ru.parametize_argsbase(percentiles,[25,75],max_length)
- 
+        dotvars = ru.parametize_argsbase(dotvars,kwargsbase(pointsize=0.5),max_length)
+        jittervars = ru.parametize_argsbase(jittervars,kwargsbase(width=0.5),max_length)
+        dashvars = ru.parametize_argsbase(dashvars,kwargsbase(),max_length)
+        dodgevars = ru.parametize_argsbase(dodgevars,kwargsbase(),max_length)
+        percboxvars = ru.parametize_argsbase(percboxvars,kwargsbase(color='k',linewidth=15),max_length)
+        outlierrangevars = ru.parametize_argsbase(outlierrangevars,kwargsbase(color='r',linewidth=5),max_length)
+        meanvars = ru.parametize_argsbase(meanvars,kwargsbase(color='red',linestyle='--'),max_length)
+        medianvars = ru.parametize_argsbase(medianvars,kwargsbase(color='k'),max_length)
+        segmentvars = ru.parametize_argsbase(segmentvars,kwargsbase(),max_length)
+        dotview = ru.parametize_argsbase(dotview,False,max_length)
+        updateparams = ru.parametize_argsbase(updateparams,argsbase(kwargsbase()),max_length)
+        histvars = ru.parametize_argsbase(histvars,TransformParam(so.Bars(),so.Hist()),max_length)
+        kdevars = ru.parametize_argsbase(kdevars,TransformParam(so.Line(),so.KDE()),max_length)
 
         #data
         temp_plotparam = kwargsbase(**plotparam.kwargs)    
@@ -407,17 +338,35 @@ def multi_boxplot(
             plotparam.kwargs[axis] = _feature
             
             if(showhistogram):
+
                 hst = SoPlot(plotparam=plotparam)
-                hst = hst.design(TransformParam(so.Bars(),so.Hist()))
+                hst = hst.design(histvars.args[_i])
+                if showkde:
+                    hst = hst.addLayer(kdevars.args[_i])
                 hst = hst.update(*updateparams.args[_i].args)
                 hst = hst.plot(target=_subfig[1])
-                for ax in _subfig[1].axes:
-                    ax.axvline(np.mean(data[_feature]),color='red',linestyle = '--') if axis == 'x' else\
-                    ax.axhline(np.mean(data[_feature]),color='red',linestyle = '--')
-                    ax.axvline(np.median(data[_feature]),color='k',linestyle = '-') if axis == 'x' else\
-                    ax.axhline(np.median(data[_feature]),color='k',linestyle = '-')
+                if showstatslines:
+                    for ax in _subfig[1].axes:
+                        ax.axvline(np.mean(data[_feature]),**meanvars.args[_i].kwargs) if axis == 'x' else\
+                        ax.axhline(np.mean(data[_feature]),**meanvars.args[_i].kwargs)
+                        ax.axvline(np.median(data[_feature]),**medianvars.args[_i].kwargs) if axis == 'x' else\
+                        ax.axhline(np.median(data[_feature]),**medianvars.args[_i].kwargs)
+                
+            box = boxplot(
+                plotparam=plotparam,
+                percentile=percentiles.args[_i],
+                dotvars=dotvars.args[_i],
+                jittervars=jittervars.args[_i],
+                dashvars=dashvars.args[_i],
+                dodgevars=dodgevars.args[_i],
+                percboxvars=percboxvars.args[_i],
+                outlierrangevars=outlierrangevars.args[_i],
+                meanvars=meanvars.args[_i],
+                medianvars=medianvars.args[_i],
+                segmentvars=segmentvars.args[_i],
+                dotview=dotview.args[_i]
+            )
             
-            box = boxplot(plotparam=plotparam,percentile=percentiles.args[_i],**boxplotvariables.args[_i].kwargs)
             box = box.update(*updateparams.args[_i].args)
             box = box.plot(target = _subfig[0] if showhistogram else _subfig)
         
@@ -434,7 +383,6 @@ def multi_boxplot(
                 .adddata('**','Only one, either x or y parameter is expected in PlotParam constructor to determine the orientation. The value does not matter for it will be overriden')
                 .act()
         )
-
 
 def multi_plot(
         plotparam:PlotParam,
@@ -491,29 +439,3 @@ def multi_plot(
         
     return fig
 
-def add_barlabel(figure):
-    """
-    This function adds bar labels to a barplot.
-    designed for plots created with seaborn objects api interface
-    make sure that the used Mark object is Bar() instead of Bars() 
-    Parameters
-
-    plotobject : barplot
-    numberoflayers : int
-    """
-    try:
-        axes = figure.figure.axes
-        for j in range(len(axes)):
-            ax0 = axes[j]
-            ax0_containers = ax0.containers
-            for i in range(len(ax0_containers)):
-                cnt = ax0_containers[i]
-                ax0.bar_label(cnt)
-        return figure
-    except Exception as e:
-        (
-            CoverException('Barlabel could not be added to the barplot',cause=e,logIt=True)
-            .adddata('plotobject', figure)
-            .adddata('__WARN__','Check number of (sub)figures and the number of axes. Make sure that the used Mark object is Bar() instead of Bars()')
-            .act()
-        )
