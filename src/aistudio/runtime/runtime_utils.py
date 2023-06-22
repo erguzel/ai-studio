@@ -89,3 +89,34 @@ def param_itemize_type (param_t,maxlength, expectedtypes):
                 )
 
     return param_t
+
+def parametize_argsbase(
+        param_arg:argsbase,
+        defaultvalue,
+        numofreplication=0,
+        filllast = False
+        )-> argsbase:
+
+    #None case
+    result = []
+    if not param_arg:
+        for i in range(numofreplication):
+            result.append(defaultvalue)
+        return argsbase(*result)
+
+    if  hasattr(param_arg,'masterparam'):
+        if param_arg.masterparam():
+            for i in range(numofreplication):
+                result.append(param_arg)
+            return argsbase(*result)
+
+    lenargs = len (param_arg.args)
+
+    # replace Nones with default
+    for j in range(numofreplication):
+        arg = param_arg.args[j] if j < lenargs else defaultvalue
+        arg = arg if arg else defaultvalue
+        result.append(arg)
+
+    return argsbase(*result)
+        
