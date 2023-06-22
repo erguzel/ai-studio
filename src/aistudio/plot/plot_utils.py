@@ -173,6 +173,65 @@ def encoder_function(keyOrValue,encoder_dict):
 
 ########################################################################
 
+def boxplot_adv(plotparam:PlotParam,
+            percentile = [25.0,75.0],
+            dotvars : kwargsbase = kwargsbase(pointsize=0.5),
+            jittervars : kwargsbase = kwargsbase(width=0.5),
+            dashvars:kwargsbase = kwargsbase(),
+            dodgevars:kwargsbase = kwargsbase(),
+            percboxvars : kwargsbase = kwargsbase(color='k',linewidth=15),
+            outlierrangevars : kwargsbase = kwargsbase(color='r',linewidth=5),
+            meanvars:kwargsbase = kwargsbase(color='red',linestyle='--'),
+            medianvars:kwargsbase = kwargsbase(color='k'),
+            segmentvars:kwargsbase = kwargsbase(),
+            dotview = False
+            ):
+
+    ##TODO check only x or y provided
+
+    temp_plotparam = kwargsbase(**plotparam.kwargs)
+    data = temp_plotparam.kwargs['data']    
+    temp_plotparam.rmv('data')
+    axis,feature = temp_plotparam.kwargs.popitem()
+    otheraxis = 'y' if axis == 'x' else 'x'
+    
+    temp_plotparam.kwargs[axis] = feature
+    temp_plotparam.kwargs[otheraxis] = np.full(data.shape[0],'obs')
+    temp_plotparam.kwargs['data'] = data
+
+    designtransform = TransformParam(so.Dot(**dotvars.kwargs),so.Jitter(**jittervars.kwargs),**segmentvars.kwargs) if  dotview else\
+                        TransformParam(so.Dash(**dashvars.kwargs),so.Dodge(**dodgevars.kwargs),**segmentvars.kwargs) 
+
+    sp =  SoPlot(
+              plotparam=temp_plotparam
+        ).design(
+            designtransform
+        ).addLayer(## percentile box
+            TransformParam(
+            so.Range(**percboxvars.kwargs),so.Perc(percentile)
+            )
+        ).addLayer( ## outlier range
+            TransformParam(
+            so.Range(**outlierrangevars.kwargs), so.Perc(su.get_outlier_range(data[feature],percentile))
+            )
+        ).addLayer(## outlier range ends
+            TransformParam(
+            so.Dash(**outlierrangevars.kwargs),so.Perc(su.get_outlier_range(data[feature],percentile))
+            )
+        ).addLayer(## meanline
+            TransformParam(
+                so.Dash(**meanvars.kwargs),so.Agg('mean')
+            )
+        ).addLayer(## medianline
+            TransformParam(
+                so.Dash(**medianvars.kwargs),so.Agg('median')
+            ) 
+        )
+    return sp
+    
+
+
+
 def boxplot(plotparam:PlotParam,
             percentile = [25.0,75.0],
             **boxplotvariables:kwargsbase):
