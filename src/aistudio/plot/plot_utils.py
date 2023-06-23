@@ -229,8 +229,8 @@ def boxplot(plotparam:PlotParam,
         )
     #data
     temp_plotparam = kwargsbase(**plotparam.kwargs)
-    data = temp_plotparam.kwargs['data']    
-    temp_plotparam.rmv('data')
+    #data = temp_plotparam.kwargs['data']    
+    data = temp_plotparam.rmv('data')
     axis,feature = temp_plotparam.kwargs.popitem()
     otheraxis = 'y' if axis == 'x' else 'x'
     temp_plotparam.kwargs[axis] = feature
@@ -319,8 +319,8 @@ def multi_boxplot(
     boxplotvars = ru.parametize_argsbase(boxplotvars,kwargsbase(),max_length)
     #data
     temp_plotparam = kwargsbase(**plotparam.kwargs)    
-    data = temp_plotparam.kwargs['data']
-    temp_plotparam.rmv('data')
+   # data = temp_plotparam.kwargs['data']
+    data = temp_plotparam.rmv('data')
     axis,feature = temp_plotparam.kwargs.popitem()
     #grid
     nrows = 1
@@ -414,8 +414,8 @@ def multi_histogram(plotparam:PlotParam,
     showoutlierrange = ru.parametize_argsbase(showoutlierrange,False,max_length)
     #data
     temp_plotparam = kwargsbase(**plotparam.kwargs)
-    data = temp_plotparam.kwargs['data']    
-    temp_plotparam.rmv('data')
+    #data = temp_plotparam.kwargs['data']    
+    data = temp_plotparam.rmv('data')
     axis,feature = temp_plotparam.kwargs.popitem()
     otheraxis = 'y' if axis == 'x' else 'x'
     temp_plotparam.kwargs[axis] = feature

@@ -17,7 +17,7 @@ class kwargsbase(baseall):
     def rmv(self,*keys):
         for key in keys:
             if key in self.kwargs:
-                self.kwargs.pop(key)
+                return self.kwargs.pop(key)
 
 class argsbase(baseall):
     def __init__(self,*args):
