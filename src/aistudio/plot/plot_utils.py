@@ -259,7 +259,7 @@ def boxplot(plotparam:PlotParam,
             ) 
         )
     return sp
-    
+
 def multi_boxplot(
             plotparam:PlotParam,
             features:argsbase,
@@ -273,6 +273,7 @@ def multi_boxplot(
             showhistogram=False,
             showstatslines = True,
             showkde = False,
+
             boxplotvars:argsbase = argsbase(kwargsbase())
             ):
     """
@@ -414,3 +415,94 @@ def multi_plot(
         
     return fig
 
+def multi_histogram(plotparam:PlotParam,
+            features : argsbase,
+            histvars:argsbase = argsbase(TransformParam(so.Bars(),so.Hist())),
+            kdevars:argsbase=argsbase(TransformParam(so.Line(),so.KDE())),
+            percentiles:argsbase = argsbase([25.0,75.0]),
+            percboxvars : argsbase = argsbase(kwargsbase(color='cyan',linewidth=2)),
+            outlierrangevars : argsbase = argsbase(kwargsbase(color='magenta',linewidth=2,linestyle = '-.')),
+            meanvars:argsbase = argsbase(kwargsbase(color='red',linestyle='--')),
+            medianvars:argsbase = argsbase(kwargsbase(color='k')),
+            updateparams:argsbase = argsbase(argsbase(kwargsbase())),
+            showkde = argsbase(False),
+            showpercbox = argsbase(False),
+            showoutlierrange = argsbase(False), ## BUG
+            figsize = (6.4,4.8),
+            wrap = 3,
+            ):
+    
+    #param
+    max_length = len(features.args)
+
+    features = ru.parametize_argsbase(features,None,max_length)
+    
+    histvars = ru.parametize_argsbase(histvars,TransformParam(so.Bars(),so.Hist()),max_length)
+    kdevars = ru.parametize_argsbase(kdevars,TransformParam(so.Line(),so.KDE()),max_length)
+    percentiles = ru.parametize_argsbase(percentiles,[25.0,75.0],max_length)
+    percboxvars = ru.parametize_argsbase(percboxvars,kwargsbase(color='cyan',linewidth=2),max_length)
+    outlierrangevars = ru.parametize_argsbase(outlierrangevars,kwargsbase(color='magenta',linewidth=2,linestyle = '-.'),max_length)
+    meanvars = ru.parametize_argsbase(meanvars,kwargsbase(color='red',linestyle='--'),max_length)
+    medianvars = ru.parametize_argsbase(medianvars,kwargsbase(color='k'),max_length)
+    updateparams = ru.parametize_argsbase(updateparams,argsbase(kwargsbase()),max_length)
+    showkde = ru.parametize_argsbase(showkde,False,max_length)
+    showpercbox = ru.parametize_argsbase(showpercbox,False,max_length)
+    showoutlierrange = ru.parametize_argsbase(showoutlierrange,False,max_length)
+    
+    #data
+    temp_plotparam = kwargsbase(**plotparam.kwargs)
+    data = temp_plotparam.kwargs['data']    
+    temp_plotparam.rmv('data')
+    axis,feature = temp_plotparam.kwargs.popitem()
+    otheraxis = 'y' if axis == 'x' else 'x'
+    
+    temp_plotparam.kwargs[axis] = feature
+    temp_plotparam.kwargs[otheraxis] = np.full(data.shape[0],'obs')
+    temp_plotparam.kwargs['data'] = data
+
+    #grid
+    nrows = 1
+    ncols = ncols=wrap if max_length > wrap else max_length
+    for i in range(0,max_length):
+        if(i>= wrap and i % wrap == 0):
+            nrows+=1 
+    
+    fig = plt.figure(figsize=figsize)
+    subfigs = fig.subfigures(nrows,ncols)    
+    subfigs =  subfigs.flatten() if hasattr(subfigs,'flatten') else subfigs if ru.is_array(subfigs) else [subfigs] 
+
+    for _i, (_feature, _subfig) in enumerate(zip(features.args,subfigs)):
+        
+        plotparam.kwargs[axis] = _feature
+       
+        hst = SoPlot(plotparam=plotparam)
+        hst = hst.design(histvars.args[_i])
+        if showkde.args[_i]:
+            hst = hst.addLayer(kdevars.args[_i])
+        hst = hst.update(*updateparams.args[_i].args)
+        hst = hst.plot(target=_subfig)
+       
+        for ax in _subfig.axes:
+            ax.axvline(np.mean(data[_feature]),**meanvars.args[_i].kwargs) if axis == 'x' else\
+            ax.axhline(np.mean(data[_feature]),**meanvars.args[_i].kwargs)
+            ax.axvline(np.median(data[_feature]),**medianvars.args[_i].kwargs) if axis == 'x' else\
+            ax.axhline(np.median(data[_feature]),**medianvars.args[_i].kwargs)
+            if showpercbox.args[_i]:
+                percs = percentiles.args[_i]
+                percs = np.percentile(data[_feature],percs)
+                ax.axvline(percs[0],**percboxvars.args[_i].kwargs) if axis == 'x' else\
+                ax.axhline(percs[0],**percboxvars.args[_i].kwargs)
+                ax.axvline(percs[1],**percboxvars.args[_i].kwargs) if axis == 'x' else\
+                ax.axhline(percs[1],**percboxvars.args[_i].kwargs)
+ 
+            if showoutlierrange.args[_i]:
+                percs = percentiles.args[_i]
+                percs = su.get_outlier_range(percs)
+                ax.axvline(percs[0],**outlierrangevars.args[_i].kwargs) if axis == 'x' else\
+                ax.axhline(percs[0],**outlierrangevars.args[_i].kwargs)
+                ax.axvline(percs[1],**outlierrangevars.args[_i].kwargs) if axis == 'x' else\
+                ax.axhline(percs[1],**outlierrangevars.args[_i].kwargs)
+
+
+    
+    return fig

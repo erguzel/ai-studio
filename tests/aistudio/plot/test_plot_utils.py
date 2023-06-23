@@ -17,7 +17,12 @@ from aistudio.abstraction.base_types import *
 df_original = pd.read_pickle('examples/dscienc-cstudy/Uber-Pickups-Weather/bin.upw-clear.df.pkl')
 df = df_original.copy()
 
+hs = pu.multi_histogram(
+    plotparam= pu.PlotParam(data = df, x = 'pickups'),
+    features=argsbase('temp'),
+)
 
+"""
 bx = pu.multi_boxplot(
     pu.PlotParam(data = df, x = 'pickups'),
     features=argsbase('temp','dew_point_temperature','sea_level_pressure'),
@@ -44,3 +49,4 @@ bx = pu.multi_boxplot(
         )
     )  
 )
+"""
