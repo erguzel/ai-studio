@@ -17,10 +17,42 @@ from aistudio.abstraction.base_types import *
 df_original = pd.read_pickle('examples/dscienc-cstudy/Uber-Pickups-Weather/bin.upw-clear.df.pkl')
 df = df_original.copy()
 
+#sns.set_theme(palette='pastel',color_codes=True)
+ll = pu.multi_plot(
+    plotparam=pu.PlotParam(data = df, y = 'pickups'),
+    features=argsbase('borough','week_day'),
+    designparams= pu.TransformParam(so.Bar(),so.Agg()).setmasterparam(True),
+    updateparams = argsbase(pu.LayoutParam(size=(2,2))).setmasterparam(True)
+
+)
+
+"""
+pu.multi_plot(
+    plotparam=pu.PlotParam(data = df, x = 'borough'),
+    features=argsbase('pickups','temp','show_depth_inc'),
+    designparams= argsbase(
+            pu.TransformParam(so.Dot(),so.Agg(),pointsize = 'visibility'),
+            pu.TransformParam(so.Band(),so.Agg()),
+            pu.TransformParam(so.Area(),so.Perc())
+        ),
+    layerparams=argsbase(
+        None,
+        argsbase(
+            pu.TransformParam(so.Line(),so.Agg('count'),color = 'is_holiday'),
+            pu.TransformParam(so.Dash(),so.KDE(),marker = 'week_day')
+        ),
+        None,   
+    )
+)
+"""
+
+"""
 hs = pu.multi_histogram(
     plotparam= pu.PlotParam(data = df, x = 'pickups'),
     features=argsbase('temp'),
 )
+"""
+
 
 """
 bx = pu.multi_boxplot(
