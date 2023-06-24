@@ -254,11 +254,11 @@ def boxplot(plotparam:PlotParam,
             )
         ).addLayer( ## outlier range
             TransformParam(
-            so.Range(**outlierrangevars.kwargs), so.Perc(su.get_outlier_percentileofscore(data[feature],percentiles))
+            so.Range(**outlierrangevars.kwargs), so.Perc(su.get_outlier_percentileofscores(data[feature],argsbase(percentiles)).args[0])
             )
         ).addLayer(## outlier range ends
             TransformParam(
-            so.Dash(**outlierrangevars.kwargs),so.Perc(su.get_outlier_percentileofscore(data[feature],percentiles))
+            so.Dash(**outlierrangevars.kwargs),so.Perc(su.get_outlier_percentileofscores(data[feature],argsbase(percentiles)).args[0])
             )
         ).addLayer(## meanline
             TransformParam(
@@ -457,13 +457,11 @@ def multi_histogram(plotparam:PlotParam,
                 ax.axhline(percs[1],**percboxvars.args[_i].kwargs)
             if showoutlierrange.args[_i]:
                 percs = percentiles.args[_i]
-                lower,upper = su.get_outlier_bounds(data[_feature],percs)
+                lower,upper = su.get_outlier_boundpairs(data[_feature],argsbase(percs)).args[0]
                 ax.axvline(lower,**outlierrangevars.args[_i].kwargs) if axis == 'x' else\
                 ax.axhline(lower,**outlierrangevars.args[_i].kwargs)
                 ax.axvline(upper,**outlierrangevars.args[_i].kwargs) if axis == 'x' else\
                 ax.axhline(upper,**outlierrangevars.args[_i].kwargs)
-
-
     
     return fig
 
