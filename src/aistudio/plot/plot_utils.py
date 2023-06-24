@@ -146,34 +146,36 @@ class SoPlot():
 ## Globals
 ####################
 
-def MONTH_NAMES():
-    """
-    returns a dict of sorted month names
-    """
-    return {1:'January', 2:'February', 3:'March', 4:'April', 5:'May', 6:'June', 7:'July', 8:'August', 9:'September', 10:'October', 11:'November', 12:'December'}
+class GLOBALS:
+    @classmethod
+    def MONTH_NAMES(cls):
+        """
+        returns a dict of sorted month names
+        """
+        return {1:'January', 2:'February', 3:'March', 4:'April', 5:'May', 6:'June', 7:'July', 8:'August', 9:'September', 10:'October', 11:'November', 12:'December'}
+    @classmethod
+    def WEEK_DAYS(cls):
+        """
+        returns a dict of weekdays
+        """
+        return {1:'Monday', 2:'Tuesday', 3:'Wednesday', 4:'Thursday', 5:'Friday', 6:'Saturday', 7:'Sunday'}
+    @classmethod
+    def encoder_function(cls,keyOrValue,encoder_dict):
+        """
+        This function retursns key or value depending is which one is passed. Otherwise it returns given keyOrValue parameter.  
+        Dictionary keys and values must be unique.
 
-def WEEK_DAYS():
-    """
-    returns a dict of weekdays
-    """
-    return {1:'Monday', 2:'Tuesday', 3:'Wednesday', 4:'Thursday', 5:'Friday', 6:'Saturday', 7:'Sunday'}
+        Parameters
 
-def encoder_function(keyOrValue,encoder_dict):
-    """
-    This function retursns key or value depending is which one is passed. Otherwise it returns given keyOrValue parameter.  
-    Dictionary keys and values must be unique.
-
-    Parameters
-
-    keyOrValue : str
-    encoder_dict : dict
-    """
-    for (k,v) in encoder_dict.items():
-        if(k==keyOrValue):
-            return v
-        if(v==keyOrValue):
-            return k
-    return keyOrValue
+        keyOrValue : str
+        encoder_dict : dict
+        """
+        for (k,v) in encoder_dict.items():
+            if(k==keyOrValue):
+                return v
+            if(v==keyOrValue):
+                return k
+        return keyOrValue
 
 ################################
 ## Functs

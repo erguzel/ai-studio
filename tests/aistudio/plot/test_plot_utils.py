@@ -17,7 +17,12 @@ from aistudio.abstraction.base_types import *
 df_original = pd.read_pickle('examples/dscienc-cstudy/Uber-Pickups-Weather/bin.upw-clear.df.pkl')
 df = df_original.copy()
 
+month = pu.GLOBALS.encoder_function(3,pu.GLOBALS.MONTH_NAMES())
+print(month)
+
 #sns.set_theme(palette='pastel',color_codes=True)
+
+"""
 ll = pu.multi_plot(
     plotparam=pu.PlotParam(data = df, y = 'pickups'),
     features=argsbase('borough','week_day'),
@@ -25,6 +30,7 @@ ll = pu.multi_plot(
     updateparams = argsbase(pu.LayoutParam(size=(2,2))).setmasterparam(True)
 
 )
+"""
 
 """
 pu.multi_plot(
