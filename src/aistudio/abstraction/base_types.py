@@ -2,7 +2,19 @@
 class baseall(object):
     def __init__(self) -> None:
         pass
-
+    #oveeride
+    def __len__(self):
+        return len(self.kwargs) + len(self.args) if hasattr(self,'kwargs') and hasattr(self,'args') else\
+        len(self.kwargs) if hasattr(self,'kwargs') else len(self.args)
+    #override
+    def __contains__(self,item):
+        if hasattr(self,'kwargs'):        
+                if item in self.kwargs:
+                    return True
+        if hasattr(self,'args'):
+                if item in self.args:
+                    return True
+        return False
     def isin(self, *keyorelms):
         if hasattr(self,'kwargs'):
             for key in keyorelms:
@@ -18,7 +30,14 @@ class kwargsbase(baseall):
     def __init__(self,**kwargs):
         self.kwargs = kwargs
         baseall.__init__(self)
+    #override
+    def __getitem__(self,key):
+        return self.kwargs[key]
+    #override
+    def __setitem__(self,key,val):
+        self.args[key] = val
     
+
     def addkvp(self,**kwargs):
         self.kwargs = self.kwargs | kwargs
         return self
@@ -73,7 +92,11 @@ class argsbase(baseall):
     def __init__(self,*args):
         self.args = args
         baseall.__init__(self)
-    
+    #override
+    def __getitem__(self,index):
+        return self.args[index] 
+
+
     def addelm(self, *args):
         self.args = self.args + args
         return self
@@ -91,14 +114,19 @@ class argsbase(baseall):
         self.args = tuple(self.args[i] for i in range(len(self.args)) if self.args[i] not in elms)  
 
     def getelm(self,*index):
-        return tuple(self.args[i] for i in range(len(self.args)) if i in index)
+        res =  tuple(self.args[i] for i in range(len(self.args)) if i in index)
+        return res if len(res) >1 else res[0]
 
 
 class argskwargssbase(argsbase,kwargsbase):
     def __init__(self,*args,**kwargs):
         argsbase.__init__(self,*args)
         kwargsbase.__init__(self,**kwargs)  
-        
+
+    #override
+    def __getitem__(self,key):
+        return self.args[key] if isinstance(key,int) else self.kwargs[key]
+
         
 
 
