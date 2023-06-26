@@ -299,10 +299,6 @@ def multi_boxplot(
     medianvars = parametize_argsbase(medianvars,kwargsbase(color='k',linestyle = ':'),max_length)
     boxplotvars = parametize_argsbase(boxplotvars,kwargsbase(),max_length)
     #data
-    #temp_plotparam = kwargsbase(**plotparam.kwargs)    
-    #data = temp_plotparam.popval('data')
-    #axis,feature = temp_plotparam.kwargs.popitem()
-
     temp_plotparam = kwargsbase(**plotparam.kwargs)
     data = temp_plotparam.popval('data')
     xval,yval = temp_plotparam.popval('x','y')
@@ -379,7 +375,8 @@ def multi_histogram(plotparam:PlotParam,
             globalupdates:argsbase = argsbase(),
             showkde = argsbase(False),
             showpercbox = argsbase(False),
-            showoutlierrange = argsbase(False), 
+            showoutlierrange = argsbase(False),
+            showstatlines = argsbase(False),
             figsize = (6.4,4.8),
             layout = 'tight',
             wrap = 3,
@@ -407,14 +404,30 @@ def multi_histogram(plotparam:PlotParam,
     showkde = parametize_argsbase(showkde,False,max_length)
     showpercbox = parametize_argsbase(showpercbox,False,max_length)
     showoutlierrange = parametize_argsbase(showoutlierrange,False,max_length)
+    showstatlines = parametize_argsbase(showstatlines,False,max_length)
     #data
+    #temp_plotparam = kwargsbase(**plotparam.kwargs)
+    #data = temp_plotparam.popval('data')
+    #axis,feature = temp_plotparam.kwargs.popitem()
+    #otheraxis = 'y' if axis == 'x' else 'x'
+    #temp_plotparam.kwargs[axis] = feature
+    #temp_plotparam.kwargs[otheraxis] = np.full(data.shape[0],'obs')
+    #temp_plotparam.kwargs['data'] = data
+
+
     temp_plotparam = kwargsbase(**plotparam.kwargs)
-    data, = temp_plotparam.popkvp('data')
-    axis,feature = temp_plotparam.kwargs.popitem()
-    otheraxis = 'y' if axis == 'x' else 'x'
-    temp_plotparam.kwargs[axis] = feature
-    temp_plotparam.kwargs[otheraxis] = np.full(data.shape[0],'obs')
-    temp_plotparam.kwargs['data'] = data
+    data = temp_plotparam.popval('data')
+    xval,yval = temp_plotparam.popval('x','y')
+    if xval and yval:
+        (
+            Interrupter(message='Along with data parameter, only one of x or y variable required with any value, to determine the orientation.',log= True,throw=True)
+            .addkvp(file = getframeinfo(currentframe()).filename)
+            .addkvp(lineno = getframeinfo(currentframe()).lineno)
+            .act()
+        )
+    axis = 'x' if xval else 'y'
+    feature = xval if xval else yval
+
     #grid
     nrows = 1
     ncols = ncols=wrap if max_length > wrap else max_length
@@ -436,10 +449,11 @@ def multi_histogram(plotparam:PlotParam,
         hst = hst.plot(target=_subfig)
        #lines
         for ax in _subfig.axes:
-            ax.axvline(np.mean(data[_feature]),**meanvars.args[_i].kwargs) if axis == 'x' else\
-            ax.axhline(np.mean(data[_feature]),**meanvars.args[_i].kwargs)
-            ax.axvline(np.median(data[_feature]),**medianvars.args[_i].kwargs) if axis == 'x' else\
-            ax.axhline(np.median(data[_feature]),**medianvars.args[_i].kwargs)
+            if showstatlines.args[_i]:
+                ax.axvline(np.mean(data[_feature]),**meanvars.args[_i].kwargs) if axis == 'x' else\
+                ax.axhline(np.mean(data[_feature]),**meanvars.args[_i].kwargs)
+                ax.axvline(np.median(data[_feature]),**medianvars.args[_i].kwargs) if axis == 'x' else\
+                ax.axhline(np.median(data[_feature]),**medianvars.args[_i].kwargs)
             if showpercbox.args[_i]:
                 percs = percentiles.args[_i]
                 percs = np.percentile(data[_feature],percs)
