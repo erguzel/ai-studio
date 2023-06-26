@@ -2,9 +2,8 @@
 contins util functions related to runtime
 """
 import numpy as np
-import exchelp.exception_helper as eh
-from exchelp.exception_helper import *
 from aistudio.abstraction.base_types import *
+from aistudio.exception.exception_utils import *
 
 def is_array(variable):
     return isinstance(variable, list)  or isinstance(variable,np.ndarray)
@@ -13,7 +12,7 @@ def parametize_argsbase(
         param_arg:argsbase,
         defaultvalue,
         numofreplication=0,
-        filllast = False #:TODO
+        metavals = argsbase('_masterparam','masterparam','__masterparam__','__masterparam'),
         )-> argsbase:
 
     #None case
@@ -22,8 +21,13 @@ def parametize_argsbase(
         [result.append(defaultvalue) for i in range(numofreplication)]
         return argsbase(*result)
 
-    if  hasattr(param_arg,'masterparam'):
-        if param_arg.masterparam():
+    if  isinstance(param_arg,baseall):
+        if param_arg.isin(*metavals.args):
+            if subtype_checker(param_arg,argsbase):
+                param_arg.rmvelm(*metavals.args)
+            if subtype_checker(param_arg,kwargsbase):
+                param_arg.popval(*metavals.args)
+
             [result.append(param_arg) for i in range(numofreplication)]
             return argsbase(*result)
     else:
@@ -40,4 +44,38 @@ def parametize_argsbase(
     )
     
     return argsbase(*result)
-        
+    
+
+def type_checker (instance, *types)->bool:
+    """
+    Checks the type of given instance is among the types provided.
+    Does not check inner element types.
+    
+    Args:
+        instance (Any): Instance variable
+        *types (Type): a series of types i.e str,int,list
+
+    Returns:
+        bool: True if the instance type in types
+    """
+    for typ in types:
+        if type(instance) == typ:
+            return True
+    return False
+
+def subtype_checker(instance, *types)->bool:
+    """
+    Checks given instance type is type or a subtype of the given types
+
+    Args:
+        instance (Any): Instance variable
+        *types (Type): a series of types i.e. str, int, dict
+
+    Returns:
+        bool: True if given instance type is among the given type args, or instance type is a subtype of given types
+    """
+    for typ in types:
+        if isinstance(instance,typ):
+            return True
+    return False
+

@@ -2,9 +2,9 @@ import seaborn.objects as so
 import matplotlib.pyplot as plt
 import numpy as np
 
-from exchelp.exception_helper import *
-import aistudio.runtime.runtime_utils as ru
-import aistudio.statistics.stats_utils as su
+from aistudio.exception.exception_utils import Interrupter,InterruptPatcher
+from aistudio.runtime.runtime_utils import subtype_checker,type_checker,parametize_argsbase,is_array
+from aistudio.statistics.stats_utils import get_outlier_percentileofscores,get_outlier_boundpairs,agg_upper_outlierbound,agg_lower_outlierbound,get_outlier_bounds
 from aistudio.abstraction.base_types import *
 from inspect import currentframe, getframeinfo
 
@@ -94,33 +94,31 @@ class SoPlot():
     def update(self,*args:kwargsbase|argsbase|kwargsbase):
 
         for arg in args:
-            if not check_type(arg,(argsbase,kwargsbase,argskwargssbase),typecheckmode=TypeCheckMode.SUBTYPE):
-                CoreException(
-                    message='Update arguments must be of base types, argsbase, kwargsbase, argskwargssbase',
-                    cause=None,
-                    logIt=True).act()
-            if (check_type(arg,ScaleParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+            if not subtype_checker(arg,argsbase,kwargsbase,argskwargssbase):
+                Interrupter(
+                    'Update arguments must be of base types, argsbase, kwargsbase, argskwargssbase',log=True,throw = True).act()
+            if  type_checker(arg,ScaleParam):
                 self.__plot__ = self.__plot__.scale(**arg.kwargs)
-            elif (check_type(arg,FacetParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+            elif type_checker(arg,FacetParam):
                 self.__plot__ = self.__plot__.facet(**arg.kwargs)
-            elif (check_type(arg,PairParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+            elif type_checker(arg,PairParam):
                 self.__plot__ = self.__plot__.pair(**arg.kwargs)
-            elif (check_type(arg,LayoutParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+            elif type_checker(arg,LayoutParam):
                 self.__plot__ = self.__plot__.layout(**arg.kwargs)
-            elif (check_type(arg,LabelParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+            elif type_checker(arg,LabelParam):
                 self.__plot__ = self.__plot__.label(**arg.kwargs)
-            elif (check_type(arg,LimitParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+            elif type_checker(arg,LimitParam):
                 self.__plot__ = self.__plot__.limit(**arg.kwargs)
-            elif (check_type(arg,ShareParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+            elif type_checker(arg,ShareParam):
                 self.__plot__ = self.__plot__.share(**arg.kwargs)
-            elif (check_type(arg,ThemeParam,typecheckmode=TypeCheckMode.SUBTYPE)):
+            elif type_checker(arg,ThemeParam):
                 self.__plot__ = self.__plot__.theme(*arg.args)
             else:
                  (
-                 CoreException(message='Given update parameter is not one of the expected ones',logIt= True,)
-                 .adddata('expected_types','ScaleParam,FacetParam,PairParam,LayoutParam,LabelParam,LimitParam,ShareParam,ThemeParam')
-                 .adddata('file',getframeinfo(currentframe()).filename)
-                 .adddata('lineno',getframeinfo(currentframe()).lineno)
+                 Interrupter('Given update parameter is not one of the expected ones',log= True,throw = True)
+                 .addkvp(expected_types = 'ScaleParam,FacetParam,PairParam,LayoutParam,LabelParam,LimitParam,ShareParam,ThemeParam')
+                 .addkvp(file = getframeinfo(currentframe()).filename)
+                 .addkvp(lineno = getframeinfo(currentframe()).lineno)
                  .act()
                  )
                
@@ -202,10 +200,9 @@ def add_barlabel(figure):
         return figure
     except Exception as e:
         (
-            CoverException('Barlabel could not be added to the barplot',cause=e,logIt=True)
-            .adddata('plotobject', figure)
-            .adddata('__WARN__','Check number of (sub)figures and the number of axes. Make sure that the used Mark object is Bar() instead of Bars()')
-            .act()
+            InterruptPatcher('Barlabel could not be added to the barplot',log=True,throw = True)
+            .adddata(HINT = 'Check number of (sub)figures and the number of axes. Make sure that the used Mark object is Bar() instead of Bars()')
+            .act(e)
         )
 
 def boxplot(plotparam:PlotParam,
@@ -219,24 +216,30 @@ def boxplot(plotparam:PlotParam,
             meanvars:kwargsbase = kwargsbase(color='red',linestyle='--'),
             medianvars:kwargsbase = kwargsbase(color='k',linestyle = ':'),
             segmentvars:kwargsbase = kwargsbase(),
-            dotview = False
+            dotview = True,
+            **kwargs
             ):
     #validate
-    if(len(plotparam.kwargs)!= 2 or 'data' not in plotparam.kwargs):
-        (
-            CoreException(message='Along with data parameter, only one of x or y variable required with any value, to determine the orientation.',logIt= True,)
-            .adddata('file',getframeinfo(currentframe()).filename)
-            .adddata('lineno',getframeinfo(currentframe()).lineno)
-            .act()
-        )
+   
     #data
     temp_plotparam = kwargsbase(**plotparam.kwargs)
-    #data = temp_plotparam.kwargs['data']    
-    data = temp_plotparam.rmv('data')
-    axis,feature = temp_plotparam.kwargs.popitem()
+    data = temp_plotparam.popval('data')
+    xval,yval = temp_plotparam.popval('x','y')
+    if xval and yval:
+        (
+            Interrupter(message='Along with data parameter, only one of x or y variable required with any value, to determine the orientation.',log= True,throw=True)
+            .addkvp(file = getframeinfo(currentframe()).filename)
+            .addkvp(lineno = getframeinfo(currentframe()).lineno)
+            .act()
+        )
+    axis = 'x' if xval else 'y'
+    feature = xval if xval else yval
+    #axis,feature = None,None
+    #axis,feature = temp_plotparam.kwargs.popitem()
+    #todo allow other variables in plotparam
     otheraxis = 'y' if axis == 'x' else 'x'
     temp_plotparam.kwargs[axis] = feature
-    temp_plotparam.kwargs[otheraxis] = np.full(data.shape[0],'obs')
+    temp_plotparam.kwargs[otheraxis] = np.full(data.shape[0],' ')
     temp_plotparam.kwargs['data'] = data
     #plot
     designtransform = (
@@ -244,31 +247,14 @@ def boxplot(plotparam:PlotParam,
             if  dotview else
         TransformParam(so.Dash(**dashvars.kwargs),so.Dodge(**dodgevars.kwargs),**segmentvars.kwargs) 
     )
-    sp =  SoPlot(
-              plotparam=temp_plotparam
-        ).design(
-            designtransform
-        ).addLayer(## percentile box
-            TransformParam(
-            so.Range(**percboxvars.kwargs),so.Perc(percentiles)
-            )
-        ).addLayer( ## outlier range
-            TransformParam(
-            so.Range(**outlierrangevars.kwargs), so.Perc(su.get_outlier_percentileofscores(data[feature],argsbase(percentiles)).args[0])
-            )
-        ).addLayer(## outlier range ends
-            TransformParam(
-            so.Dash(**outlierrangevars.kwargs),so.Perc(su.get_outlier_percentileofscores(data[feature],argsbase(percentiles)).args[0])
-            )
-        ).addLayer(## meanline
-            TransformParam(
-                so.Dash(**meanvars.kwargs),so.Agg('mean')
-            )
-        ).addLayer(## medianline
-            TransformParam(
-                so.Dash(**medianvars.kwargs),so.Agg('median')
-            ) 
-        )
+      # .addLayer(TransformParam(so.Range(**outlierrangevars.kwargs), so.Est(func=get_outlier_bounds,errorbar=('ci',90))))
+    sp = SoPlot(plotparam=temp_plotparam).design(designtransform)\
+        .addLayer(TransformParam(so.Range(**percboxvars.kwargs),so.Perc(percentiles)))\
+        .addLayer(TransformParam(so.Dash(**outlierrangevars.kwargs),so.Agg(agg_upper_outlierbound)))\
+        .addLayer(TransformParam(so.Dash(**outlierrangevars.kwargs),so.Agg(agg_lower_outlierbound)))\
+        .addLayer(TransformParam(so.Dash(**meanvars.kwargs),so.Agg('mean')))\
+        .addLayer(TransformParam(so.Dash(**medianvars.kwargs),so.Agg('median')))
+        
     return sp
 
 def multi_boxplot(
@@ -302,28 +288,35 @@ def multi_boxplot(
     segmentvars:argsbase = argsbase(kwargsbase()),
     dotview = argsbase(False),
     """
-    #validate
-    if(len(plotparam.kwargs)!= 2 or 'data' not in plotparam.kwargs):
-        (
-        CoreException(message='Along with data parameter, only one of x or y variable required with any value, to determine the orientation.',logIt= True,)
-        .adddata('file',getframeinfo(currentframe()).filename)
-        .adddata('lineno',getframeinfo(currentframe()).lineno)
-        .act()
-        )
+
     #param
     max_length = len(features.args)
-    features = ru.parametize_argsbase(features,None,max_length)
-    updateparams = ru.parametize_argsbase(updateparams,argsbase(),max_length)
-    histvars = ru.parametize_argsbase(histvars,TransformParam(so.Bars(),so.Hist()),max_length)
-    kdevars = ru.parametize_argsbase(kdevars,TransformParam(so.Line(),so.KDE()),max_length)
-    meanvars = ru.parametize_argsbase(meanvars,kwargsbase(color='red',linestyle='--'),max_length)
-    medianvars = ru.parametize_argsbase(medianvars,kwargsbase(color='k',linestyle = ':'),max_length)
-    boxplotvars = ru.parametize_argsbase(boxplotvars,kwargsbase(),max_length)
+    features = parametize_argsbase(features,None,max_length)
+    updateparams = parametize_argsbase(updateparams,argsbase(),max_length)
+    histvars = parametize_argsbase(histvars,TransformParam(so.Bars(),so.Hist()),max_length)
+    kdevars = parametize_argsbase(kdevars,TransformParam(so.Line(),so.KDE()),max_length)
+    meanvars = parametize_argsbase(meanvars,kwargsbase(color='red',linestyle='--'),max_length)
+    medianvars = parametize_argsbase(medianvars,kwargsbase(color='k',linestyle = ':'),max_length)
+    boxplotvars = parametize_argsbase(boxplotvars,kwargsbase(),max_length)
     #data
-    temp_plotparam = kwargsbase(**plotparam.kwargs)    
-   # data = temp_plotparam.kwargs['data']
-    data = temp_plotparam.rmv('data')
-    axis,feature = temp_plotparam.kwargs.popitem()
+    #temp_plotparam = kwargsbase(**plotparam.kwargs)    
+    #data = temp_plotparam.popval('data')
+    #axis,feature = temp_plotparam.kwargs.popitem()
+
+    temp_plotparam = kwargsbase(**plotparam.kwargs)
+    data = temp_plotparam.popval('data')
+    xval,yval = temp_plotparam.popval('x','y')
+    if xval and yval:
+        (
+            Interrupter(message='Along with data parameter, only one of x or y variable required with any value, to determine the orientation.',log= True,throw=True)
+            .addkvp(file = getframeinfo(currentframe()).filename)
+            .addkvp(lineno = getframeinfo(currentframe()).lineno)
+            .act()
+        )
+    axis = 'x' if xval else 'y'
+    feature = xval if xval else yval
+    #otheraxis = 'y' if axis == 'x' else 'x'
+
     #grid
     nrows = 1
     ncols = ncols=wrap if max_length > wrap else max_length
@@ -339,7 +332,7 @@ def multi_boxplot(
                     subfigs.append([grid_subfigs[k],grid_subfigs[k+1]]) if len(grid_subfigs.shape)==1 else subfigs.append([grid_subfigs[k,j],grid_subfigs[k+1,j]])
     else:
         subfigs = fig.subfigures(nrows,ncols)    
-        subfigs =  subfigs.flatten() if hasattr(subfigs,'flatten') else subfigs if ru.is_array(subfigs) else [subfigs]
+        subfigs =  subfigs.flatten() if hasattr(subfigs,'flatten') else subfigs if is_array(subfigs) else [subfigs]
     #plot
     for _i, (_feature, _subfig) in enumerate(zip(features.args,subfigs)):
         plotparam.kwargs[axis] = _feature
@@ -395,29 +388,28 @@ def multi_histogram(plotparam:PlotParam,
     #validate
     if(len(plotparam.kwargs)!= 2 or 'data' not in plotparam.kwargs):
         (
-            CoreException(message='Along with data parameter, only one of x or y variable required with any value, to determine the orientation.',logIt= True,)
-            .adddata('file',getframeinfo(currentframe()).filename)
-            .adddata('lineno',getframeinfo(currentframe()).lineno)
+            Interrupter('Along with data parameter, only one of x or y variable required with any value, to determine the orientation.',log= True,throw=True)
+            .adddata(file = getframeinfo(currentframe()).filename)
+            .adddata(lineno = getframeinfo(currentframe()).lineno)
             .act()
         )
     #param
     max_length = len(features.args)
-    features = ru.parametize_argsbase(features,None,max_length)
-    histvars = ru.parametize_argsbase(histvars,TransformParam(so.Bars(),so.Hist()),max_length)
-    kdevars = ru.parametize_argsbase(kdevars,TransformParam(so.Line(),so.KDE()),max_length)
-    percentiles = ru.parametize_argsbase(percentiles,[25.0,75.0],max_length)
-    percboxvars = ru.parametize_argsbase(percboxvars,kwargsbase(color='cyan',linewidth=2),max_length)
-    outlierrangevars = ru.parametize_argsbase(outlierrangevars,kwargsbase(color='magenta',linewidth=2,linestyle = '-.'),max_length)
-    meanvars = ru.parametize_argsbase(meanvars,kwargsbase(color='red',linestyle='--'),max_length)
-    medianvars = ru.parametize_argsbase(medianvars,kwargsbase(color='k',linestyle = ':'),max_length)
-    updateparams = ru.parametize_argsbase(updateparams,argsbase(),max_length)
-    showkde = ru.parametize_argsbase(showkde,False,max_length)
-    showpercbox = ru.parametize_argsbase(showpercbox,False,max_length)
-    showoutlierrange = ru.parametize_argsbase(showoutlierrange,False,max_length)
+    features = parametize_argsbase(features,None,max_length)
+    histvars = parametize_argsbase(histvars,TransformParam(so.Bars(),so.Hist()),max_length)
+    kdevars = parametize_argsbase(kdevars,TransformParam(so.Line(),so.KDE()),max_length)
+    percentiles = parametize_argsbase(percentiles,[25.0,75.0],max_length)
+    percboxvars = parametize_argsbase(percboxvars,kwargsbase(color='cyan',linewidth=2),max_length)
+    outlierrangevars = parametize_argsbase(outlierrangevars,kwargsbase(color='magenta',linewidth=2,linestyle = '-.'),max_length)
+    meanvars = parametize_argsbase(meanvars,kwargsbase(color='red',linestyle='--'),max_length)
+    medianvars = parametize_argsbase(medianvars,kwargsbase(color='k',linestyle = ':'),max_length)
+    updateparams = parametize_argsbase(updateparams,argsbase(),max_length)
+    showkde = parametize_argsbase(showkde,False,max_length)
+    showpercbox = parametize_argsbase(showpercbox,False,max_length)
+    showoutlierrange = parametize_argsbase(showoutlierrange,False,max_length)
     #data
     temp_plotparam = kwargsbase(**plotparam.kwargs)
-    #data = temp_plotparam.kwargs['data']    
-    data = temp_plotparam.rmv('data')
+    data, = temp_plotparam.popkvp('data')
     axis,feature = temp_plotparam.kwargs.popitem()
     otheraxis = 'y' if axis == 'x' else 'x'
     temp_plotparam.kwargs[axis] = feature
@@ -431,7 +423,7 @@ def multi_histogram(plotparam:PlotParam,
             nrows+=1 
     fig = plt.figure(figsize=figsize,layout = layout)
     subfigs = fig.subfigures(nrows,ncols)    
-    subfigs =  subfigs.flatten() if hasattr(subfigs,'flatten') else subfigs if ru.is_array(subfigs) else [subfigs] 
+    subfigs =  subfigs.flatten() if hasattr(subfigs,'flatten') else subfigs if is_array(subfigs) else [subfigs] 
     #plot
     for _i, (_feature, _subfig) in enumerate(zip(features.args,subfigs)):
         plotparam.kwargs[axis] = _feature
@@ -457,7 +449,7 @@ def multi_histogram(plotparam:PlotParam,
                 ax.axhline(percs[1],**percboxvars.args[_i].kwargs)
             if showoutlierrange.args[_i]:
                 percs = percentiles.args[_i]
-                lower,upper = su.get_outlier_boundpairs(data[_feature],argsbase(percs)).args[0]
+                lower,upper = get_outlier_boundpairs(data[_feature],argsbase(percs)).args[0]
                 ax.axvline(lower,**outlierrangevars.args[_i].kwargs) if axis == 'x' else\
                 ax.axhline(lower,**outlierrangevars.args[_i].kwargs)
                 ax.axvline(upper,**outlierrangevars.args[_i].kwargs) if axis == 'x' else\
@@ -479,13 +471,13 @@ def multi_plot(
     
     #param
     max_length = len(features.args)
-    features = ru.parametize_argsbase(features,None,max_length)
-    layerparams = ru.parametize_argsbase(layerparams,argsbase(),max_length)
-    designparams = ru.parametize_argsbase(designparams,None,max_length)
-    updateparams = ru.parametize_argsbase(updateparams,argsbase(),max_length)
+    features = parametize_argsbase(features,None,max_length)
+    layerparams = parametize_argsbase(layerparams,argsbase(),max_length)
+    designparams = parametize_argsbase(designparams,None,max_length)
+    updateparams = parametize_argsbase(updateparams,argsbase(),max_length)
     #data
     temp_plotparam = kwargsbase(**plotparam.kwargs)    
-    temp_plotparam.rmv('data')
+    temp_plotparam.popkvp('data')
     axis,feature = temp_plotparam.kwargs.popitem()
     otheraxis = 'y' if axis == 'x' else 'x'
     #grid
@@ -496,7 +488,7 @@ def multi_plot(
             nrows+=1 
     fig = plt.figure(figsize=figsize,layout=layout)
     subfigs = fig.subfigures(nrows,ncols)    
-    subfigs =  subfigs.flatten() if hasattr(subfigs,'flatten') else subfigs if ru.is_array(subfigs) else [subfigs]
+    subfigs =  subfigs.flatten() if hasattr(subfigs,'flatten') else subfigs if is_array(subfigs) else [subfigs]
     #plot
     soplt = SoPlot(plotparam=plotparam)
     for _i, (_feature, _subfig) in enumerate(zip(features.args,subfigs)):
