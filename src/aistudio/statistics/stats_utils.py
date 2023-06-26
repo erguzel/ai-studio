@@ -43,6 +43,12 @@ def get_outlier_boundpairs(data,percentiles:argsbase=argsbase([25.0,75.0]))->arg
 
 
 def get_outlier_bounds(data,percentile=[25,75]):
+    if len(percentile) != 2:
+        Interrupter('Only uppest and lowest percentile values are needed i.e. [25.0,75.0]',log=True,throw = True)\
+        .addkvp(filename = getframeinfo(currentframe()).filename)\
+        .addkvp(lineno = getframeinfo(currentframe()).lineno)\
+        .act() 
+        
     q1,q3 = np.percentile(data,percentile)
     iqr = q3-q1
     lower_bound = q1 - (1.5 * iqr)
