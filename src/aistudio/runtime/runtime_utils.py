@@ -9,30 +9,30 @@ def is_array(variable):
     return isinstance(variable, list)  or isinstance(variable,np.ndarray)
 
 def parametize_argsbase(
-        param_arg:argsbase,
+        param_arg:tpargsbase,
         defaultvalue,
         numofreplication=0,
-        metavals = argsbase('_masterparam','masterparam','__masterparam__','__masterparam'),
-        )-> argsbase:
+        metavals = tpargsbase('_masterparam','masterparam','__masterparam__','__masterparam'),
+        )-> tpargsbase:
 
     #None case
     result = []
     if not param_arg:
         [result.append(defaultvalue) for i in range(numofreplication)]
-        return argsbase(*result)
+        return tpargsbase(*result)
 
-    if  isinstance(param_arg,baseall):
+    if  isinstance(param_arg,argsbase):
         if param_arg.isin(*metavals.args):
-            if subtype_checker(param_arg,argsbase):
+            if subtype_checker(param_arg,tpargsbase):
                 param_arg.rmvelm(*metavals.args)
             if subtype_checker(param_arg,kwargsbase):
                 param_arg.popval(*metavals.args)
 
             [result.append(param_arg) for i in range(numofreplication)]
-            return argsbase(*result)
+            return tpargsbase(*result)
     else:
         [result.append(param_arg) for i in range(numofreplication)]
-        return argsbase(*result)
+        return tpargsbase(*result)
     
     lenargs = len (param_arg.args)
 
@@ -43,7 +43,7 @@ def parametize_argsbase(
             for j in range(numofreplication)]
     )
     
-    return argsbase(*result)
+    return tpargsbase(*result)
     
 
 def type_checker (instance, *types)->bool:
