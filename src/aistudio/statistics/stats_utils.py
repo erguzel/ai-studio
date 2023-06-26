@@ -5,7 +5,7 @@ from inspect import currentframe, getframeinfo
 
 import numpy as np
 
-def get_outlier_percentileofscores(data, percentiles:argsbase = argsbase([25.0,75.0]))->argsbase:
+def get_outlier_percentileofscores(data, percentiles:tpargsbase = tpargsbase([25.0,75.0]))->tpargsbase:
     result = []
     for i,perc in enumerate(percentiles.args):
         if len(perc) !=2:
@@ -15,13 +15,13 @@ def get_outlier_percentileofscores(data, percentiles:argsbase = argsbase([25.0,7
                 .addkvp(lineno = getframeinfo(currentframe()).lineno)
                 .act() 
             )
-        lower,upper = get_outlier_boundpairs(data,argsbase(perc)).args[i]
+        lower,upper = get_outlier_boundpairs(data,tpargsbase(perc)).args[i]
         lowerdata,upperdata = stats.percentileofscore(data,[lower,upper])
         result.append([lowerdata,upperdata])
     
-    return argsbase(*result)
+    return tpargsbase(*result)
         
-def get_outlier_boundpairs(data,percentiles:argsbase=argsbase([25.0,75.0]))->argsbase:
+def get_outlier_boundpairs(data,percentiles:tpargsbase=tpargsbase([25.0,75.0]))->tpargsbase:
     result = []
     for perc in percentiles.args:
         if len(perc) != 2:
@@ -39,7 +39,7 @@ def get_outlier_boundpairs(data,percentiles:argsbase=argsbase([25.0,75.0]))->arg
         upper_bound = upper_bound if upper_bound <= max(data) else max(data)
         result.append((lower_bound,upper_bound))
         
-    return argsbase(*result)
+    return tpargsbase(*result)
 
 
 def get_outlier_bounds(data,percentile=[25,75]):
