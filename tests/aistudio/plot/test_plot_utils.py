@@ -17,8 +17,14 @@ from aistudio.abstraction.base_types import *
 df_original = pd.read_pickle('examples/dscienc-cstudy/Uber-Pickups-Weather/bin.upw-clear.df.pkl')
 df = df_original.copy()
 
-month = pu.GLOBALS.encoder_function(3,pu.GLOBALS.MONTH_NAMES())
-print(month)
+
+aa = pu.multi_histogram(
+    plotparam=pu.PlotParam(data = df, x = 'pickups'),
+    features=argsbase('pickups','temp'),
+    showoutlierrange=True,
+    histvars= pu.TransformParam(so.Area(),so.Hist()).addelm('masterparam')
+)
+
 
 #sns.set_theme(palette='pastel',color_codes=True)
 

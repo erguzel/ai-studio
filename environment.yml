@@ -5,7 +5,6 @@ dependencies:
   - python=3.11
   - pip
   - pip:
-    - exc-help @ git+ssh://git@github.com/erguzel/exc-help.git # requires key
     - numpy==1.23.2
     - pandas==2.0.2
     - matplotlib==3.7
