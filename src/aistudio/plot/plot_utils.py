@@ -16,7 +16,7 @@ from inspect import currentframe, getframeinfo
 # argskwargsbase
 class PlotParam(argskwargssbase):
     def __init__(self,*args, **kwargs):
-        argsbase.__init__(self,*args)
+        tpargsbase.__init__(self,*args)
         kwargsbase.__init__(self,**kwargs)
             
 # design,
@@ -24,7 +24,7 @@ class PlotParam(argskwargssbase):
 # argskwargsbase
 class TransformParam(argskwargssbase):
     def __init__(self,*args,**kwargs):
-        argsbase.__init__(self,*args)
+        tpargsbase.__init__(self,*args)
         kwargsbase.__init__(self,**kwargs)
 
 ##update params
@@ -57,7 +57,7 @@ class ShareParam(kwargsbase):
     def __init__(self,**kwargs):
         super().__init__(**kwargs)  
 # argsbase
-class ThemeParam(argsbase):
+class ThemeParam(tpargsbase):
     def __init__(self,*args):
         super().__init__(*args) 
 
@@ -91,10 +91,10 @@ class SoPlot():
 
         return self 
        
-    def update(self,*args:kwargsbase|argsbase|kwargsbase):
+    def update(self,*args:kwargsbase|tpargsbase|kwargsbase):
 
         for arg in args:
-            if not subtype_checker(arg,argsbase,kwargsbase,argskwargssbase):
+            if not subtype_checker(arg,tpargsbase,kwargsbase,argskwargssbase):
                 Interrupter(
                     'Update arguments must be of base types, argsbase, kwargsbase, argskwargssbase',log=True,throw = True).act()
             if  type_checker(arg,ScaleParam):
@@ -259,13 +259,13 @@ def boxplot(plotparam:PlotParam,
 
 def multi_boxplot(
             plotparam:PlotParam,
-            features:argsbase,
-            updateparams:argsbase = argsbase(),
-            globalupdates:argsbase = argsbase(),
-            histvars:argsbase = argsbase(TransformParam(so.Bars(),so.Hist())),
-            kdevars:argsbase=argsbase(TransformParam(so.Line(),so.KDE())),
-            meanvars:argsbase = argsbase(kwargsbase(color='red',linestyle='--')),
-            medianvars:argsbase = argsbase(kwargsbase(color='k',linestyle = ':')),
+            features:tpargsbase,
+            updateparams:tpargsbase = tpargsbase(),
+            globalupdates:tpargsbase = tpargsbase(),
+            histvars:tpargsbase = tpargsbase(TransformParam(so.Bars(),so.Hist())),
+            kdevars:tpargsbase=tpargsbase(TransformParam(so.Line(),so.KDE())),
+            meanvars:tpargsbase = tpargsbase(kwargsbase(color='red',linestyle='--')),
+            medianvars:tpargsbase = tpargsbase(kwargsbase(color='k',linestyle = ':')),
             figsize = (6.4,4.8),
             layout = 'tight',
             wrap = 3,
@@ -273,7 +273,7 @@ def multi_boxplot(
             showstatslines = True,
             showkde = False,
 
-            boxplotvars:argsbase = argsbase(kwargsbase())
+            boxplotvars:tpargsbase = tpargsbase(kwargsbase())
             ):
     """
     boxplotvars = argsbase(kwargsbase()),
@@ -292,7 +292,7 @@ def multi_boxplot(
     #param
     max_length = len(features.args)
     features = parametize_argsbase(features,None,max_length)
-    updateparams = parametize_argsbase(updateparams,argsbase(),max_length)
+    updateparams = parametize_argsbase(updateparams,tpargsbase(),max_length)
     histvars = parametize_argsbase(histvars,TransformParam(so.Bars(),so.Hist()),max_length)
     kdevars = parametize_argsbase(kdevars,TransformParam(so.Line(),so.KDE()),max_length)
     meanvars = parametize_argsbase(meanvars,kwargsbase(color='red',linestyle='--'),max_length)
@@ -363,20 +363,20 @@ def multi_boxplot(
     return fig
 
 def multi_histogram(plotparam:PlotParam,
-            features : argsbase,
-            histvars:argsbase = argsbase(TransformParam(so.Bars(),so.Hist())),
-            kdevars:argsbase=argsbase(TransformParam(so.Line(),so.KDE())),
-            percentiles:argsbase = argsbase([25.0,75.0]),
-            percboxvars : argsbase = argsbase(kwargsbase(color='cyan',linewidth=2)),
-            outlierrangevars : argsbase = argsbase(kwargsbase(color='magenta',linewidth=2,linestyle = '-.')),
-            meanvars:argsbase = argsbase(kwargsbase(color='red',linestyle='--')),
-            medianvars:argsbase = argsbase(kwargsbase(color='k',linestyle =':')),
-            updateparams:argsbase = argsbase(),
-            globalupdates:argsbase = argsbase(),
-            showkde = argsbase(False),
-            showpercbox = argsbase(False),
-            showoutlierrange = argsbase(False),
-            showstatlines = argsbase(False),
+            features : tpargsbase,
+            histvars:tpargsbase = tpargsbase(TransformParam(so.Bars(),so.Hist())),
+            kdevars:tpargsbase=tpargsbase(TransformParam(so.Line(),so.KDE())),
+            percentiles:tpargsbase = tpargsbase([25.0,75.0]),
+            percboxvars : tpargsbase = tpargsbase(kwargsbase(color='cyan',linewidth=2)),
+            outlierrangevars : tpargsbase = tpargsbase(kwargsbase(color='magenta',linewidth=2,linestyle = '-.')),
+            meanvars:tpargsbase = tpargsbase(kwargsbase(color='red',linestyle='--')),
+            medianvars:tpargsbase = tpargsbase(kwargsbase(color='k',linestyle =':')),
+            updateparams:tpargsbase = tpargsbase(),
+            globalupdates:tpargsbase = tpargsbase(),
+            showkde = tpargsbase(False),
+            showpercbox = tpargsbase(False),
+            showoutlierrange = tpargsbase(False),
+            showstatlines = tpargsbase(False),
             figsize = (6.4,4.8),
             layout = 'tight',
             wrap = 3,
@@ -400,7 +400,7 @@ def multi_histogram(plotparam:PlotParam,
     outlierrangevars = parametize_argsbase(outlierrangevars,kwargsbase(color='magenta',linewidth=2,linestyle = '-.'),max_length)
     meanvars = parametize_argsbase(meanvars,kwargsbase(color='red',linestyle='--'),max_length)
     medianvars = parametize_argsbase(medianvars,kwargsbase(color='k',linestyle = ':'),max_length)
-    updateparams = parametize_argsbase(updateparams,argsbase(),max_length)
+    updateparams = parametize_argsbase(updateparams,tpargsbase(),max_length)
     showkde = parametize_argsbase(showkde,False,max_length)
     showpercbox = parametize_argsbase(showpercbox,False,max_length)
     showoutlierrange = parametize_argsbase(showoutlierrange,False,max_length)
@@ -463,7 +463,7 @@ def multi_histogram(plotparam:PlotParam,
                 ax.axhline(percs[1],**percboxvars.args[_i].kwargs)
             if showoutlierrange.args[_i]:
                 percs = percentiles.args[_i]
-                lower,upper = get_outlier_boundpairs(data[_feature],argsbase(percs)).args[0]
+                lower,upper = get_outlier_boundpairs(data[_feature],tpargsbase(percs)).args[0]
                 ax.axvline(lower,**outlierrangevars.args[_i].kwargs) if axis == 'x' else\
                 ax.axhline(lower,**outlierrangevars.args[_i].kwargs)
                 ax.axvline(upper,**outlierrangevars.args[_i].kwargs) if axis == 'x' else\
@@ -473,11 +473,11 @@ def multi_histogram(plotparam:PlotParam,
 
 def multi_plot(
         plotparam:PlotParam,
-        features:argsbase,
-        designparams:argsbase,
-        layerparams:argsbase = None,
-        updateparams:argsbase = argsbase(),
-        globalupdates:argsbase = argsbase(),
+        features:tpargsbase,
+        designparams:tpargsbase,
+        layerparams:tpargsbase = None,
+        updateparams:tpargsbase = tpargsbase(),
+        globalupdates:tpargsbase = tpargsbase(),
         figsize = None,
         layout = 'tight',
         wrap = 3,
@@ -486,9 +486,9 @@ def multi_plot(
     #param
     max_length = len(features.args)
     features = parametize_argsbase(features,None,max_length)
-    layerparams = parametize_argsbase(layerparams,argsbase(),max_length)
+    layerparams = parametize_argsbase(layerparams,tpargsbase(),max_length)
     designparams = parametize_argsbase(designparams,None,max_length)
-    updateparams = parametize_argsbase(updateparams,argsbase(),max_length)
+    updateparams = parametize_argsbase(updateparams,tpargsbase(),max_length)
     #data
     temp_plotparam = kwargsbase(**plotparam.kwargs)    
     temp_plotparam.popkvp('data')

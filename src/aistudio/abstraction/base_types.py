@@ -1,5 +1,5 @@
 
-class baseall(object):
+class argsbase(object):
     def __init__(self) -> None:
         pass
     #oveeride
@@ -26,10 +26,10 @@ class baseall(object):
                     return True
         return False
     
-class kwargsbase(baseall):
+class kwargsbase(argsbase):
     def __init__(self,**kwargs):
         self.kwargs = kwargs
-        baseall.__init__(self)
+        argsbase.__init__(self)
     #override
     def __getitem__(self,key):
         return self.kwargs[key]
@@ -37,7 +37,6 @@ class kwargsbase(baseall):
     def __setitem__(self,key,val):
         self.args[key] = val
     
-
     def addkvp(self,**kwargs):
         self.kwargs = self.kwargs | kwargs
         return self
@@ -88,14 +87,13 @@ class kwargsbase(baseall):
         return tuple(res) if lenkeys>1 else res[0]
         
 
-class argsbase(baseall):
+class tpargsbase(argsbase):
     def __init__(self,*args):
         self.args = args
-        baseall.__init__(self)
+        argsbase.__init__(self)
     #override
     def __getitem__(self,index):
         return self.args[index] 
-
 
     def addelm(self, *args):
         self.args = self.args + args
@@ -118,9 +116,9 @@ class argsbase(baseall):
         return res if len(res) >1 else res[0]
 
 
-class argskwargssbase(argsbase,kwargsbase):
+class argskwargssbase(tpargsbase,kwargsbase):
     def __init__(self,*args,**kwargs):
-        argsbase.__init__(self,*args)
+        tpargsbase.__init__(self,*args)
         kwargsbase.__init__(self,**kwargs)  
 
     #override

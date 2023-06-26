@@ -14,11 +14,11 @@ df = df_original.copy()
 
 
 var1 = ru.kwargsbase()
-var2 = ru.argsbase()
+var2 = ru.tpargsbase()
 var3 = ru.argskwargssbase()
 
 
 
 print(ru.type_checker(var1,ru.kwargsbase))
-print(ru.type_checker(var2,ru.argsbase))
-print(ru.type_checker(var3,ru.argsbase))
+print(ru.type_checker(var2,ru.tpargsbase))
+print(ru.type_checker(var3,ru.tpargsbase))
