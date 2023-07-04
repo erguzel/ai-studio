@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from aistudio.exception.exception_utils import Interrupter,InterruptPatcher
-from aistudio.runtime.runtime_utils import subtype_checker,type_checker,parametize_argsbase,is_array
+from aistudio.runtime.runtime_utils import subtype_checker,type_checker,parametize_tpargsbase,is_array
 from aistudio.statistics.stats_utils import get_outlier_percentileofscores,get_outlier_boundpairs,agg_upper_outlierbound,agg_lower_outlierbound,get_outlier_bounds
 from aistudio.abstraction.base_types import *
 from inspect import currentframe, getframeinfo
@@ -14,7 +14,7 @@ from inspect import currentframe, getframeinfo
 
 # plot
 # argskwargsbase
-class PlotParam(argskwargssbase):
+class PlotParam(tpkwargsbase):
     def __init__(self,*args, **kwargs):
         tpargsbase.__init__(self,*args)
         kwargsbase.__init__(self,**kwargs)
@@ -22,7 +22,7 @@ class PlotParam(argskwargssbase):
 # design,
 # layer params
 # argskwargsbase
-class TransformParam(argskwargssbase):
+class TransformParam(tpkwargsbase):
     def __init__(self,*args,**kwargs):
         tpargsbase.__init__(self,*args)
         kwargsbase.__init__(self,**kwargs)
@@ -94,7 +94,7 @@ class SoPlot():
     def update(self,*args:kwargsbase|tpargsbase|kwargsbase):
 
         for arg in args:
-            if not subtype_checker(arg,tpargsbase,kwargsbase,argskwargssbase):
+            if not subtype_checker(arg,tpargsbase,kwargsbase,tpkwargsbase):
                 Interrupter(
                     'Update arguments must be of base types, argsbase, kwargsbase, argskwargssbase',log=True,throw = True).act()
             if  type_checker(arg,ScaleParam):
@@ -291,13 +291,13 @@ def multi_boxplot(
 
     #param
     max_length = len(features.args)
-    features = parametize_argsbase(features,None,max_length)
-    updateparams = parametize_argsbase(updateparams,tpargsbase(),max_length)
-    histvars = parametize_argsbase(histvars,TransformParam(so.Bars(),so.Hist()),max_length)
-    kdevars = parametize_argsbase(kdevars,TransformParam(so.Line(),so.KDE()),max_length)
-    meanvars = parametize_argsbase(meanvars,kwargsbase(color='red',linestyle='--'),max_length)
-    medianvars = parametize_argsbase(medianvars,kwargsbase(color='k',linestyle = ':'),max_length)
-    boxplotvars = parametize_argsbase(boxplotvars,kwargsbase(),max_length)
+    features = parametize_tpargsbase(features,None,max_length)
+    updateparams = parametize_tpargsbase(updateparams,tpargsbase(),max_length)
+    histvars = parametize_tpargsbase(histvars,TransformParam(so.Bars(),so.Hist()),max_length)
+    kdevars = parametize_tpargsbase(kdevars,TransformParam(so.Line(),so.KDE()),max_length)
+    meanvars = parametize_tpargsbase(meanvars,kwargsbase(color='red',linestyle='--'),max_length)
+    medianvars = parametize_tpargsbase(medianvars,kwargsbase(color='k',linestyle = ':'),max_length)
+    boxplotvars = parametize_tpargsbase(boxplotvars,kwargsbase(),max_length)
     #data
     temp_plotparam = kwargsbase(**plotparam.kwargs)
     data = temp_plotparam.popval('data')
@@ -392,19 +392,19 @@ def multi_histogram(plotparam:PlotParam,
         )
     #param
     max_length = len(features.args)
-    features = parametize_argsbase(features,None,max_length)
-    histvars = parametize_argsbase(histvars,TransformParam(so.Bars(),so.Hist()),max_length)
-    kdevars = parametize_argsbase(kdevars,TransformParam(so.Line(),so.KDE()),max_length)
-    percentiles = parametize_argsbase(percentiles,[25.0,75.0],max_length)
-    percboxvars = parametize_argsbase(percboxvars,kwargsbase(color='cyan',linewidth=2),max_length)
-    outlierrangevars = parametize_argsbase(outlierrangevars,kwargsbase(color='magenta',linewidth=2,linestyle = '-.'),max_length)
-    meanvars = parametize_argsbase(meanvars,kwargsbase(color='red',linestyle='--'),max_length)
-    medianvars = parametize_argsbase(medianvars,kwargsbase(color='k',linestyle = ':'),max_length)
-    updateparams = parametize_argsbase(updateparams,tpargsbase(),max_length)
-    showkde = parametize_argsbase(showkde,False,max_length)
-    showpercbox = parametize_argsbase(showpercbox,False,max_length)
-    showoutlierrange = parametize_argsbase(showoutlierrange,False,max_length)
-    showstatlines = parametize_argsbase(showstatlines,False,max_length)
+    features = parametize_tpargsbase(features,None,max_length)
+    histvars = parametize_tpargsbase(histvars,TransformParam(so.Bars(),so.Hist()),max_length)
+    kdevars = parametize_tpargsbase(kdevars,TransformParam(so.Line(),so.KDE()),max_length)
+    percentiles = parametize_tpargsbase(percentiles,[25.0,75.0],max_length)
+    percboxvars = parametize_tpargsbase(percboxvars,kwargsbase(color='cyan',linewidth=2),max_length)
+    outlierrangevars = parametize_tpargsbase(outlierrangevars,kwargsbase(color='magenta',linewidth=2,linestyle = '-.'),max_length)
+    meanvars = parametize_tpargsbase(meanvars,kwargsbase(color='red',linestyle='--'),max_length)
+    medianvars = parametize_tpargsbase(medianvars,kwargsbase(color='k',linestyle = ':'),max_length)
+    updateparams = parametize_tpargsbase(updateparams,tpargsbase(),max_length)
+    showkde = parametize_tpargsbase(showkde,False,max_length)
+    showpercbox = parametize_tpargsbase(showpercbox,False,max_length)
+    showoutlierrange = parametize_tpargsbase(showoutlierrange,False,max_length)
+    showstatlines = parametize_tpargsbase(showstatlines,False,max_length)
     #data
     #temp_plotparam = kwargsbase(**plotparam.kwargs)
     #data = temp_plotparam.popval('data')
@@ -485,10 +485,10 @@ def multi_plot(
     
     #param
     max_length = len(features.args)
-    features = parametize_argsbase(features,None,max_length)
-    layerparams = parametize_argsbase(layerparams,tpargsbase(),max_length)
-    designparams = parametize_argsbase(designparams,None,max_length)
-    updateparams = parametize_argsbase(updateparams,tpargsbase(),max_length)
+    features = parametize_tpargsbase(features,None,max_length)
+    layerparams = parametize_tpargsbase(layerparams,tpargsbase(),max_length)
+    designparams = parametize_tpargsbase(designparams,None,max_length)
+    updateparams = parametize_tpargsbase(updateparams,tpargsbase(),max_length)
     #data
     temp_plotparam = kwargsbase(**plotparam.kwargs)    
     temp_plotparam.popkvp('data')
