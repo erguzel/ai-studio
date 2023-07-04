@@ -3,7 +3,7 @@ from aistudio.abstraction.base_types import *
 from aistudio.data.json.json_utils import *
 
 
-class Interrupter(argskwargssbase,Exception,BaseException):
+class Interrupter(tpkwargsbase,Exception,BaseException):
 
     def __init__(self, *args, **kwargs):
         """

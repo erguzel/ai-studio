@@ -4,18 +4,29 @@ class argsbase(object):
         pass
     #oveeride
     def __len__(self):
-        return len(self.kwargs) + len(self.args) if hasattr(self,'kwargs') and hasattr(self,'args') else\
-        len(self.kwargs) if hasattr(self,'kwargs') else len(self.args)
+        return len(self.kwargs) + len(self.args) if isinstance(self,tpkwargsbase) else\
+        len(self.kwargs) if isinstance(self,kwargsbase) else len(self.args)
     #override
     def __contains__(self,item):
-        if hasattr(self,'kwargs'):        
+        if isinstance(self, kwargsbase):        
                 if item in self.kwargs:
                     return True
-        if hasattr(self,'args'):
+        if isinstance(self,argsbase):
                 if item in self.args:
                     return True
         return False
     def isin(self, *keyorelms):
+        
+        res = []
+        lenkeyorelms = len(keyorelms)
+        for keyorelm in keyorelms:
+            if(self.__contains__(keyorelm)):
+                res.append(True)
+            else: res.append(False)
+
+        return tuple(res) if lenkeyorelms >1 else res[0]
+
+        """
         if hasattr(self,'kwargs'):
             for key in keyorelms:
                 if key in self.kwargs:
@@ -25,7 +36,8 @@ class argsbase(object):
                 if key in self.args:
                     return True
         return False
-    
+        """
+
 class kwargsbase(argsbase):
     def __init__(self,**kwargs):
         self.kwargs = kwargs
@@ -50,40 +62,56 @@ class kwargsbase(argsbase):
         lenkeys = len(keys)
         res = []
         for i in range(lenkeys):
-            if keys[i] in self.kwargs:
                 v = self.kwargs.pop(keys[i])
                 res.append((keys[i],v))
-            else: res.append((keys[i],None))
         return tuple(res) if lenkeys>1 else res[0]
 
-    def popval(self,*keys)->tuple:
+    def popval(self,*keys,nonsafe=True)->tuple:
         lenkeys = len(keys)
         res = []
-        for i in range(len(keys)):
-            if keys[i] in self.kwargs:
-                v = self.kwargs.pop(keys[i])
-                res.append(v)
-            else:res.append(None)
-        return tuple(res) if lenkeys>1 else res[0]
 
+        if nonsafe:
+             for i in range(len(keys)):
+                if keys[i] in self.kwargs:
+                    v = self.kwargs.pop(keys[i])
+                    res.append(v)  
+                       # kvpair = (keys[i],self.kwargs[keys[i]])
+                       # res.append(kvpair)
+                else: res.append(None)
+        else:
+             for i in range(len(keys)):
+                v = self.kwargs.pop(keys[i])
+                res.append(v)  
+                
+        return tuple(res) if lenkeys>1 else res[0]
+                  
+        """
+        for i in range(len(keys)):
+                if nonsafe:
+                  if keys[i] in self.kwargs:
+                        kvpair = (keys[i],self.kwargs[keys[i]])
+                        res.append(kvpair)
+                  else: res.append(None)
+                else:
+                    v = self.kwargs.pop(keys[i])
+                    res.append(v)   
+        """             
     def getval(self,*keys)->tuple:
         res = []
         lenkeys = len(keys)
         for i in range(lenkeys):
-            if keys[i] in self.kwargs:
-                v = self.kwargs(keys[i])
+                v = self.kwargs[keys[i]]
                 res.append(v)
-            else: res.append(None)
         return tuple(res) if lenkeys>1 else res[0] 
         
     def getkvp(self,*keys)->tuple:
         res = []
         lenkeys = len(keys)
         for i in range(lenkeys):
-            if keys[i] in self.kwargs:
+      #      if keys[i] in self.kwargs:
                 kvpair = (keys[i],self.kwargs[keys[i]])
                 res.append(kvpair)
-            else: res.append(None)
+       #     else: res.append(None)
         return tuple(res) if lenkeys>1 else res[0]
         
 
@@ -116,7 +144,7 @@ class tpargsbase(argsbase):
         return res if len(res) >1 else res[0]
 
 
-class argskwargssbase(tpargsbase,kwargsbase):
+class tpkwargsbase(tpargsbase,kwargsbase):
     def __init__(self,*args,**kwargs):
         tpargsbase.__init__(self,*args)
         kwargsbase.__init__(self,**kwargs)  

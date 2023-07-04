@@ -15,7 +15,7 @@ df = df_original.copy()
 
 var1 = ru.kwargsbase()
 var2 = ru.tpargsbase()
-var3 = ru.argskwargssbase()
+var3 = ru.tpkwargsbase()
 
 
 

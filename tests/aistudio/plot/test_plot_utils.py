@@ -20,7 +20,7 @@ df = df_original.copy()
 
 aa = pu.multi_histogram(
     plotparam=pu.PlotParam(data = df, x = 'pickups'),
-    features=tpargsbase('pickups','temp'),
+    features=pu.tpargsbase('pickups','temp'),
     showoutlierrange=True,
     histvars= pu.TransformParam(so.Area(),so.Hist()).addelm('masterparam')
 )
