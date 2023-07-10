@@ -5,30 +5,31 @@ from inspect import currentframe, getframeinfo
 
 import numpy as np
 
-def get_outlier_percentileofscores(data, percentiles:tpargsbase = tpargsbase([25.0,75.0]))->tpargsbase:
+
+def get_outlier_percentileofscores(data, percentiles:tuplargs = tuplargs([25.0,75.0]))->tuplargs:
     result = []
     for i,perc in enumerate(percentiles.args):
         if len(perc) !=2:
             (
                Interrupter('Only uppest and lowest percentile values are needed i.e. [25.0,75.0]',log=True,throw = True)
-                .addkvp(filename = getframeinfo(currentframe()).filename)
-                .addkvp(lineno = getframeinfo(currentframe()).lineno)
+                .addkvps(filename = getframeinfo(currentframe()).filename)
+                .addkvps(lineno = getframeinfo(currentframe()).lineno)
                 .act() 
             )
-        lower,upper = get_outlier_boundpairs(data,tpargsbase(perc)).args[i]
+        lower,upper = get_outlier_boundpairs(data,tuplargs(perc)).args[i]
         lowerdata,upperdata = stats.percentileofscore(data,[lower,upper])
         result.append([lowerdata,upperdata])
     
-    return tpargsbase(*result)
+    return tuplargs(*result)
         
-def get_outlier_boundpairs(data,percentiles:tpargsbase=tpargsbase([25.0,75.0]))->tpargsbase:
+def get_outlier_boundpairs(data,percentiles:tuplargs=tuplargs([25.0,75.0]))->tuplargs:
     result = []
     for perc in percentiles.args:
         if len(perc) != 2:
             (
                Interrupter('Only uppest and lowest percentile values are needed i.e. [25.0,75.0]',log=True,throw = True)
-                .addkvp(filename = getframeinfo(currentframe()).filename)
-                .addkvp(lineno = getframeinfo(currentframe()).lineno)
+                .addkvps(filename = getframeinfo(currentframe()).filename)
+                .addkvps(lineno = getframeinfo(currentframe()).lineno)
                 .act() 
             )
         q1,q3 = np.percentile(data,perc)
@@ -39,14 +40,14 @@ def get_outlier_boundpairs(data,percentiles:tpargsbase=tpargsbase([25.0,75.0]))-
         upper_bound = upper_bound if upper_bound <= max(data) else max(data)
         result.append((lower_bound,upper_bound))
         
-    return tpargsbase(*result)
+    return tuplargs(*result)
 
 
 def get_outlier_bounds(data,percentile=[25,75]):
     if len(percentile) != 2:
         Interrupter('Only uppest and lowest percentile values are needed i.e. [25.0,75.0]',log=True,throw = True)\
-        .addkvp(filename = getframeinfo(currentframe()).filename)\
-        .addkvp(lineno = getframeinfo(currentframe()).lineno)\
+        .addkvps(filename = getframeinfo(currentframe()).filename)\
+        .addkvps(lineno = getframeinfo(currentframe()).lineno)\
         .act() 
         
     q1,q3 = np.percentile(data,percentile)

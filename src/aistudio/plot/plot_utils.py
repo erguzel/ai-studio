@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from aistudio.exception.exception_utils import Interrupter,InterruptPatcher
-from aistudio.runtime.runtime_utils import subtype_checker,type_checker,parametize_tpargsbase,is_array
+from aistudio.exception.exception_utils import is_subtypeof,is_typeof,parametize_tuplargs,is_array
 from aistudio.statistics.stats_utils import get_outlier_percentileofscores,get_outlier_boundpairs,agg_upper_outlierbound,agg_lower_outlierbound,get_outlier_bounds
 from aistudio.abstraction.base_types import *
 from inspect import currentframe, getframeinfo
@@ -14,50 +14,52 @@ from inspect import currentframe, getframeinfo
 
 # plot
 # argskwargsbase
-class PlotParam(tpkwargsbase):
+class PlotParam(dictuplargs):
     def __init__(self,*args, **kwargs):
-        tpargsbase.__init__(self,*args)
-        kwargsbase.__init__(self,**kwargs)
+        dictuplargs.__init__(self,*args,**kwargs)
+        #tupleargs.__init__(self,*args)
+        #kwargs.__init__(self,**kwargs)
             
 # design,
 # layer params
 # argskwargsbase
-class TransformParam(tpkwargsbase):
+class TransformParam(dictuplargs):
     def __init__(self,*args,**kwargs):
-        tpargsbase.__init__(self,*args)
-        kwargsbase.__init__(self,**kwargs)
+        dictuplargs.__init__(self,*args,**kwargs)
+        #tupleargs.__init__(self,*args)
+        #kwargs.__init__(self,**kwargs)
 
 ##update params
 ## kwargsbase
-class ScaleParam(kwargsbase):
+class ScaleParam(dictargs):
     def __init__(self,**kwargs):    
         super().__init__(**kwargs)
 
-class FacetParam(kwargsbase):
+class FacetParam(dictargs):
     def __init__(self,**kwargs):
         super().__init__(**kwargs)   
 
-class PairParam(kwargsbase):
+class PairParam(dictargs):
     def __init__(self,**kwargs):
         super().__init__(**kwargs)   
 
-class LayoutParam(kwargsbase):
+class LayoutParam(dictargs):
     def __init__(self,**kwargs):
         super().__init__(**kwargs)  
 
-class LabelParam(kwargsbase):
+class LabelParam(dictargs):
     def __init__(self,**kwargs):
         super().__init__(**kwargs)  
 
-class LimitParam(kwargsbase):
+class LimitParam(dictargs):
     def __init__(self,**kwargs):
         super().__init__(**kwargs)  
 
-class ShareParam(kwargsbase):
+class ShareParam(dictargs):
     def __init__(self,**kwargs):
         super().__init__(**kwargs)  
 # argsbase
-class ThemeParam(tpargsbase):
+class ThemeParam(tuplargs):
     def __init__(self,*args):
         super().__init__(*args) 
 
@@ -91,34 +93,34 @@ class SoPlot():
 
         return self 
        
-    def update(self,*args:kwargsbase|tpargsbase|kwargsbase):
+    def update(self,*args:dictargs|tuplargs|dictargs):
 
         for arg in args:
-            if not subtype_checker(arg,tpargsbase,kwargsbase,tpkwargsbase):
+            if not is_subtypeof(arg,tuplargs,dictargs,dictuplargs):
                 Interrupter(
                     'Update arguments must be of base types, argsbase, kwargsbase, argskwargssbase',log=True,throw = True).act()
-            if  type_checker(arg,ScaleParam):
+            if  is_typeof(arg,ScaleParam):
                 self.__plot__ = self.__plot__.scale(**arg.kwargs)
-            elif type_checker(arg,FacetParam):
+            elif is_typeof(arg,FacetParam):
                 self.__plot__ = self.__plot__.facet(**arg.kwargs)
-            elif type_checker(arg,PairParam):
+            elif is_typeof(arg,PairParam):
                 self.__plot__ = self.__plot__.pair(**arg.kwargs)
-            elif type_checker(arg,LayoutParam):
+            elif is_typeof(arg,LayoutParam):
                 self.__plot__ = self.__plot__.layout(**arg.kwargs)
-            elif type_checker(arg,LabelParam):
+            elif is_typeof(arg,LabelParam):
                 self.__plot__ = self.__plot__.label(**arg.kwargs)
-            elif type_checker(arg,LimitParam):
+            elif is_typeof(arg,LimitParam):
                 self.__plot__ = self.__plot__.limit(**arg.kwargs)
-            elif type_checker(arg,ShareParam):
+            elif is_typeof(arg,ShareParam):
                 self.__plot__ = self.__plot__.share(**arg.kwargs)
-            elif type_checker(arg,ThemeParam):
+            elif is_typeof(arg,ThemeParam):
                 self.__plot__ = self.__plot__.theme(*arg.args)
             else:
                  (
                  Interrupter('Given update parameter is not one of the expected ones',log= True,throw = True)
-                 .addkvp(expected_types = 'ScaleParam,FacetParam,PairParam,LayoutParam,LabelParam,LimitParam,ShareParam,ThemeParam')
-                 .addkvp(file = getframeinfo(currentframe()).filename)
-                 .addkvp(lineno = getframeinfo(currentframe()).lineno)
+                 .addkvps(expected_types = 'ScaleParam,FacetParam,PairParam,LayoutParam,LabelParam,LimitParam,ShareParam,ThemeParam')
+                 .addkvps(file = getframeinfo(currentframe()).filename)
+                 .addkvps(lineno = getframeinfo(currentframe()).lineno)
                  .act()
                  )
                
@@ -207,29 +209,29 @@ def add_barlabel(figure):
 
 def boxplot(plotparam:PlotParam,
             percentiles = [25.0,75.0],
-            dotvars : kwargsbase = kwargsbase(pointsize=0.5),
-            jittervars : kwargsbase = kwargsbase(width=0.5),
-            dashvars:kwargsbase = kwargsbase(alpha=0.1),
-            dodgevars:kwargsbase = kwargsbase(),
-            percboxvars : kwargsbase = kwargsbase(color='k',linewidth=15),
-            outlierrangevars : kwargsbase = kwargsbase(color='r',linewidth=5),
-            meanvars:kwargsbase = kwargsbase(color='red',linestyle='--'),
-            medianvars:kwargsbase = kwargsbase(color='k',linestyle = ':'),
-            segmentvars:kwargsbase = kwargsbase(),
+            dotvars : dictargs = dictargs(pointsize=0.5),
+            jittervars : dictargs = dictargs(width=0.5),
+            dashvars:dictargs = dictargs(alpha=0.1),
+            dodgevars:dictargs = dictargs(),
+            percboxvars : dictargs = dictargs(color='k',linewidth=15),
+            outlierrangevars : dictargs = dictargs(color='r',linewidth=5),
+            meanvars:dictargs = dictargs(color='red',linestyle='--'),
+            medianvars:dictargs = dictargs(color='k',linestyle = ':'),
+            segmentvars:dictargs = dictargs(),
             dotview = True,
             **kwargs
             ):
     #validate
    
     #data
-    temp_plotparam = kwargsbase(**plotparam.kwargs)
-    data = temp_plotparam.popval('data')
-    xval,yval = temp_plotparam.popval('x','y')
+    temp_plotparam = dictargs(**plotparam.kwargs)
+    data = temp_plotparam.popvals('data')
+    xval,yval = temp_plotparam.popvals('x','y')
     if xval and yval:
         (
             Interrupter(message='Along with data parameter, only one of x or y variable required with any value, to determine the orientation.',log= True,throw=True)
-            .addkvp(file = getframeinfo(currentframe()).filename)
-            .addkvp(lineno = getframeinfo(currentframe()).lineno)
+            .addkvps(file = getframeinfo(currentframe()).filename)
+            .addkvps(lineno = getframeinfo(currentframe()).lineno)
             .act()
         )
     axis = 'x' if xval else 'y'
@@ -259,13 +261,13 @@ def boxplot(plotparam:PlotParam,
 
 def multi_boxplot(
             plotparam:PlotParam,
-            features:tpargsbase,
-            updateparams:tpargsbase = tpargsbase(),
-            globalupdates:tpargsbase = tpargsbase(),
-            histvars:tpargsbase = tpargsbase(TransformParam(so.Bars(),so.Hist())),
-            kdevars:tpargsbase=tpargsbase(TransformParam(so.Line(),so.KDE())),
-            meanvars:tpargsbase = tpargsbase(kwargsbase(color='red',linestyle='--')),
-            medianvars:tpargsbase = tpargsbase(kwargsbase(color='k',linestyle = ':')),
+            features:tuplargs,
+            updateparams:tuplargs = tuplargs(),
+            globalupdates:tuplargs = tuplargs(),
+            histvars:tuplargs = tuplargs(TransformParam(so.Bars(),so.Hist())),
+            kdevars:tuplargs=tuplargs(TransformParam(so.Line(),so.KDE())),
+            meanvars:tuplargs = tuplargs(dictargs(color='red',linestyle='--')),
+            medianvars:tuplargs = tuplargs(dictargs(color='k',linestyle = ':')),
             figsize = (6.4,4.8),
             layout = 'tight',
             wrap = 3,
@@ -273,7 +275,7 @@ def multi_boxplot(
             showstatslines = True,
             showkde = False,
 
-            boxplotvars:tpargsbase = tpargsbase(kwargsbase())
+            boxplotvars:tuplargs = tuplargs(dictargs())
             ):
     """
     boxplotvars = argsbase(kwargsbase()),
@@ -291,22 +293,22 @@ def multi_boxplot(
 
     #param
     max_length = len(features.args)
-    features = parametize_tpargsbase(features,None,max_length)
-    updateparams = parametize_tpargsbase(updateparams,tpargsbase(),max_length)
-    histvars = parametize_tpargsbase(histvars,TransformParam(so.Bars(),so.Hist()),max_length)
-    kdevars = parametize_tpargsbase(kdevars,TransformParam(so.Line(),so.KDE()),max_length)
-    meanvars = parametize_tpargsbase(meanvars,kwargsbase(color='red',linestyle='--'),max_length)
-    medianvars = parametize_tpargsbase(medianvars,kwargsbase(color='k',linestyle = ':'),max_length)
-    boxplotvars = parametize_tpargsbase(boxplotvars,kwargsbase(),max_length)
+    features = parametize_tuplargs(features,None,max_length)
+    updateparams = parametize_tuplargs(updateparams,tuplargs(),max_length)
+    histvars = parametize_tuplargs(histvars,TransformParam(so.Bars(),so.Hist()),max_length)
+    kdevars = parametize_tuplargs(kdevars,TransformParam(so.Line(),so.KDE()),max_length)
+    meanvars = parametize_tuplargs(meanvars,dictargs(color='red',linestyle='--'),max_length)
+    medianvars = parametize_tuplargs(medianvars,dictargs(color='k',linestyle = ':'),max_length)
+    boxplotvars = parametize_tuplargs(boxplotvars,dictargs(),max_length)
     #data
-    temp_plotparam = kwargsbase(**plotparam.kwargs)
-    data = temp_plotparam.popval('data')
-    xval,yval = temp_plotparam.popval('x','y')
+    temp_plotparam = dictargs(**plotparam.kwargs)
+    data = temp_plotparam.popvals('data')
+    xval,yval = temp_plotparam.popvals('x','y')
     if xval and yval:
         (
             Interrupter(message='Along with data parameter, only one of x or y variable required with any value, to determine the orientation.',log= True,throw=True)
-            .addkvp(file = getframeinfo(currentframe()).filename)
-            .addkvp(lineno = getframeinfo(currentframe()).lineno)
+            .addkvps(file = getframeinfo(currentframe()).filename)
+            .addkvps(lineno = getframeinfo(currentframe()).lineno)
             .act()
         )
     axis = 'x' if xval else 'y'
@@ -363,20 +365,20 @@ def multi_boxplot(
     return fig
 
 def multi_histogram(plotparam:PlotParam,
-            features : tpargsbase,
-            histvars:tpargsbase = tpargsbase(TransformParam(so.Bars(),so.Hist())),
-            kdevars:tpargsbase=tpargsbase(TransformParam(so.Line(),so.KDE())),
-            percentiles:tpargsbase = tpargsbase([25.0,75.0]),
-            percboxvars : tpargsbase = tpargsbase(kwargsbase(color='cyan',linewidth=2)),
-            outlierrangevars : tpargsbase = tpargsbase(kwargsbase(color='magenta',linewidth=2,linestyle = '-.')),
-            meanvars:tpargsbase = tpargsbase(kwargsbase(color='red',linestyle='--')),
-            medianvars:tpargsbase = tpargsbase(kwargsbase(color='k',linestyle =':')),
-            updateparams:tpargsbase = tpargsbase(),
-            globalupdates:tpargsbase = tpargsbase(),
-            showkde = tpargsbase(False),
-            showpercbox = tpargsbase(False),
-            showoutlierrange = tpargsbase(False),
-            showstatlines = tpargsbase(False),
+            features : tuplargs,
+            histvars:tuplargs = tuplargs(TransformParam(so.Bars(),so.Hist())),
+            kdevars:tuplargs=tuplargs(TransformParam(so.Line(),so.KDE())),
+            percentiles:tuplargs = tuplargs([25.0,75.0]),
+            percboxvars : tuplargs = tuplargs(dictargs(color='cyan',linewidth=2)),
+            outlierrangevars : tuplargs = tuplargs(dictargs(color='magenta',linewidth=2,linestyle = '-.')),
+            meanvars:tuplargs = tuplargs(dictargs(color='red',linestyle='--')),
+            medianvars:tuplargs = tuplargs(dictargs(color='k',linestyle =':')),
+            updateparams:tuplargs = tuplargs(),
+            globalupdates:tuplargs = tuplargs(),
+            showkde = tuplargs(False),
+            showpercbox = tuplargs(False),
+            showoutlierrange = tuplargs(False),
+            showstatlines = tuplargs(False),
             figsize = (6.4,4.8),
             layout = 'tight',
             wrap = 3,
@@ -392,19 +394,19 @@ def multi_histogram(plotparam:PlotParam,
         )
     #param
     max_length = len(features.args)
-    features = parametize_tpargsbase(features,None,max_length)
-    histvars = parametize_tpargsbase(histvars,TransformParam(so.Bars(),so.Hist()),max_length)
-    kdevars = parametize_tpargsbase(kdevars,TransformParam(so.Line(),so.KDE()),max_length)
-    percentiles = parametize_tpargsbase(percentiles,[25.0,75.0],max_length)
-    percboxvars = parametize_tpargsbase(percboxvars,kwargsbase(color='cyan',linewidth=2),max_length)
-    outlierrangevars = parametize_tpargsbase(outlierrangevars,kwargsbase(color='magenta',linewidth=2,linestyle = '-.'),max_length)
-    meanvars = parametize_tpargsbase(meanvars,kwargsbase(color='red',linestyle='--'),max_length)
-    medianvars = parametize_tpargsbase(medianvars,kwargsbase(color='k',linestyle = ':'),max_length)
-    updateparams = parametize_tpargsbase(updateparams,tpargsbase(),max_length)
-    showkde = parametize_tpargsbase(showkde,False,max_length)
-    showpercbox = parametize_tpargsbase(showpercbox,False,max_length)
-    showoutlierrange = parametize_tpargsbase(showoutlierrange,False,max_length)
-    showstatlines = parametize_tpargsbase(showstatlines,False,max_length)
+    features = parametize_tuplargs(features,None,max_length)
+    histvars = parametize_tuplargs(histvars,TransformParam(so.Bars(),so.Hist()),max_length)
+    kdevars = parametize_tuplargs(kdevars,TransformParam(so.Line(),so.KDE()),max_length)
+    percentiles = parametize_tuplargs(percentiles,[25.0,75.0],max_length)
+    percboxvars = parametize_tuplargs(percboxvars,dictargs(color='cyan',linewidth=2),max_length)
+    outlierrangevars = parametize_tuplargs(outlierrangevars,dictargs(color='magenta',linewidth=2,linestyle = '-.'),max_length)
+    meanvars = parametize_tuplargs(meanvars,dictargs(color='red',linestyle='--'),max_length)
+    medianvars = parametize_tuplargs(medianvars,dictargs(color='k',linestyle = ':'),max_length)
+    updateparams = parametize_tuplargs(updateparams,tuplargs(),max_length)
+    showkde = parametize_tuplargs(showkde,False,max_length)
+    showpercbox = parametize_tuplargs(showpercbox,False,max_length)
+    showoutlierrange = parametize_tuplargs(showoutlierrange,False,max_length)
+    showstatlines = parametize_tuplargs(showstatlines,False,max_length)
     #data
     #temp_plotparam = kwargsbase(**plotparam.kwargs)
     #data = temp_plotparam.popval('data')
@@ -415,14 +417,14 @@ def multi_histogram(plotparam:PlotParam,
     #temp_plotparam.kwargs['data'] = data
 
 
-    temp_plotparam = kwargsbase(**plotparam.kwargs)
-    data = temp_plotparam.popval('data')
-    xval,yval = temp_plotparam.popval('x','y')
+    temp_plotparam = dictargs(**plotparam.kwargs)
+    data = temp_plotparam.popvals('data')
+    xval,yval = temp_plotparam.popvals('x','y')
     if xval and yval:
         (
             Interrupter(message='Along with data parameter, only one of x or y variable required with any value, to determine the orientation.',log= True,throw=True)
-            .addkvp(file = getframeinfo(currentframe()).filename)
-            .addkvp(lineno = getframeinfo(currentframe()).lineno)
+            .addkvps(file = getframeinfo(currentframe()).filename)
+            .addkvps(lineno = getframeinfo(currentframe()).lineno)
             .act()
         )
     axis = 'x' if xval else 'y'
@@ -438,19 +440,19 @@ def multi_histogram(plotparam:PlotParam,
     subfigs = fig.subfigures(nrows,ncols)    
     subfigs =  subfigs.flatten() if hasattr(subfigs,'flatten') else subfigs if is_array(subfigs) else [subfigs] 
     #plot
-    for _i, (_feature, _subfig) in enumerate(zip(features.args,subfigs)):
+    for _i, (_feature, _subfig) in enumerate(zip(features,subfigs)):
         plotparam.kwargs[axis] = _feature
         hst = SoPlot(plotparam=plotparam)
-        hst = hst.design(histvars.args[_i])
-        if showkde.args[_i]:
-            hst = hst.addLayer(kdevars.args[_i])
-        hst = hst.update(*globalupdates.args)
-        hst = hst.update(*updateparams.args[_i].args)
+        hst = hst.design(histvars[_i])
+        if showkde[_i]:
+            hst = hst.addLayer(kdevars[_i])
+        hst = hst.update(*globalupdates)
+        hst = hst.update(*updateparams[_i])
         hst = hst.plot(target=_subfig)
        #lines
         for ax in _subfig.axes:
-            if showstatlines.args[_i]:
-                ax.axvline(np.mean(data[_feature]),**meanvars.args[_i].kwargs) if axis == 'x' else\
+            if showstatlines[_i]:
+                ax.axvline(np.mean(data[_feature]),**meanvars[_i]) if axis == 'x' else\
                 ax.axhline(np.mean(data[_feature]),**meanvars.args[_i].kwargs)
                 ax.axvline(np.median(data[_feature]),**medianvars.args[_i].kwargs) if axis == 'x' else\
                 ax.axhline(np.median(data[_feature]),**medianvars.args[_i].kwargs)
@@ -463,7 +465,7 @@ def multi_histogram(plotparam:PlotParam,
                 ax.axhline(percs[1],**percboxvars.args[_i].kwargs)
             if showoutlierrange.args[_i]:
                 percs = percentiles.args[_i]
-                lower,upper = get_outlier_boundpairs(data[_feature],tpargsbase(percs)).args[0]
+                lower,upper = get_outlier_boundpairs(data[_feature],tuplargs(percs)).args[0]
                 ax.axvline(lower,**outlierrangevars.args[_i].kwargs) if axis == 'x' else\
                 ax.axhline(lower,**outlierrangevars.args[_i].kwargs)
                 ax.axvline(upper,**outlierrangevars.args[_i].kwargs) if axis == 'x' else\
@@ -473,11 +475,11 @@ def multi_histogram(plotparam:PlotParam,
 
 def multi_plot(
         plotparam:PlotParam,
-        features:tpargsbase,
-        designparams:tpargsbase,
-        layerparams:tpargsbase = None,
-        updateparams:tpargsbase = tpargsbase(),
-        globalupdates:tpargsbase = tpargsbase(),
+        features:tuplargs,
+        designparams:tuplargs,
+        layerparams:tuplargs = None,
+        updateparams:tuplargs = tuplargs(),
+        globalupdates:tuplargs = tuplargs(),
         figsize = None,
         layout = 'tight',
         wrap = 3,
@@ -485,13 +487,13 @@ def multi_plot(
     
     #param
     max_length = len(features.args)
-    features = parametize_tpargsbase(features,None,max_length)
-    layerparams = parametize_tpargsbase(layerparams,tpargsbase(),max_length)
-    designparams = parametize_tpargsbase(designparams,None,max_length)
-    updateparams = parametize_tpargsbase(updateparams,tpargsbase(),max_length)
+    features = parametize_tuplargs(features,None,max_length)
+    layerparams = parametize_tuplargs(layerparams,tuplargs(),max_length)
+    designparams = parametize_tuplargs(designparams,None,max_length)
+    updateparams = parametize_tuplargs(updateparams,tuplargs(),max_length)
     #data
-    temp_plotparam = kwargsbase(**plotparam.kwargs)    
-    temp_plotparam.popkvp('data')
+    temp_plotparam = dictargs(**plotparam.kwargs)    
+    temp_plotparam.popkvps('data')
     axis,feature = temp_plotparam.kwargs.popitem()
     otheraxis = 'y' if axis == 'x' else 'x'
     #grid
