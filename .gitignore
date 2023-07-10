@@ -1,5 +1,6 @@
 # special files
 models/
+bkp/
 assets/
 *.report.html
 *.test-array.csv

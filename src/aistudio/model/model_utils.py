@@ -1,4 +1,4 @@
-from exchelp.exception_helper import ReportObject,CoreException
+from aistudio.exception.exception_utils import Reporter,InterruptPatcher
 from joblib import dump 
 from pathlib import Path
 from os import path,getcwd
@@ -6,7 +6,7 @@ from datetime import datetime
 import os
 
 
-def persist_ml_model(modelName:str,trainedModel,runTitle:str,resultDir:str=None,mainReport:ReportObject=None):
+def persist_ml_model(modelName:str,trainedModel,runTitle:str,resultDir:str=None,mainReport:Reporter=None):
     """persists a trained ML model to the disk
 
     Args:
@@ -26,4 +26,4 @@ def persist_ml_model(modelName:str,trainedModel,runTitle:str,resultDir:str=None,
             with open(report_full_name, 'w') as f:
                 f.write(mainReport.reportize())
     except Exception as e:
-        CoreException('persist_model failed',e,logIt=True,dontThrow=True,shouldExit=True).adddata('locals',str(locals())).act()
+        InterruptPatcher('persist_model failed',e,log=True,throw=True).act()

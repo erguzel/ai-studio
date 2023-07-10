@@ -18,12 +18,21 @@ df_original = pd.read_pickle('examples/dscienc-cstudy/Uber-Pickups-Weather/bin.u
 df = df_original.copy()
 
 
-aa = pu.multi_histogram(
-    plotparam=pu.PlotParam(data = df, x = 'pickups'),
-    features=pu.tpargsbase('pickups','temp'),
-    showoutlierrange=True,
-    histvars= pu.TransformParam(so.Area(),so.Hist()).addelm('masterparam')
+cats = ['is_holiday','borough']
+
+f = pu.multi_plot(
+    plotparam=pu.PlotParam(
+        data = df, y = 'pickups'
+    ),
+    features=pu.tuplargs(*cats),
+    designparams= pu.argsbase(
+        pu.TransformParam(so.Bar(), so.Hist('count')), 
+        pu.TransformParam(so.Bar(), so.Hist('count'),color = 'borough',legend = False)
+    ),
+    layerparams= pu.argsbase(pu.TransformParam(so.Bar(), so.Hist('percent'))).addelm('masterparam'),
+    figsize=(16,8)
 )
+
 
 
 #sns.set_theme(palette='pastel',color_codes=True)

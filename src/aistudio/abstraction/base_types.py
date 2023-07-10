@@ -2,16 +2,28 @@
 class argsbase(object):
     def __init__(self) -> None:
         pass
+
+    #override
+    def __str__(self) -> str:
+        st =''
+    
+        st = f'[ args = {self.args}, kwargs = {self.kwargs} ]' if isinstance(self,dictuplargs) else\
+        f'kwargs = {self.kwargs}' if isinstance(self,dictargs) else f'args = {self.args}'
+        return st
+
+    def __repr__(self) -> str:
+         return str(self)
+
     #oveeride
     def __len__(self):
-        return len(self.kwargs) + len(self.args) if isinstance(self,tpkwargsbase) else\
-        len(self.kwargs) if isinstance(self,kwargsbase) else len(self.args)
+        return len(self.kwargs) + len(self.args) if isinstance(self,dictuplargs) else\
+        len(self.kwargs) if isinstance(self,dictargs) else len(self.args)
     #override
     def __contains__(self,item):
-        if isinstance(self, kwargsbase):        
+        if isinstance(self, dictargs):        
                 if item in self.kwargs:
                     return True
-        if isinstance(self,argsbase):
+        if isinstance(self,tuplargs):
                 if item in self.args:
                     return True
         return False
@@ -38,7 +50,7 @@ class argsbase(object):
         return False
         """
 
-class kwargsbase(argsbase):
+class dictargs(argsbase):
     def __init__(self,**kwargs):
         self.kwargs = kwargs
         argsbase.__init__(self)
@@ -47,13 +59,13 @@ class kwargsbase(argsbase):
         return self.kwargs[key]
     #override
     def __setitem__(self,key,val):
-        self.args[key] = val
+        self.kwargs[key] = val
     
-    def addkvp(self,**kwargs):
+    def addkvps(self,**kwargs):
         self.kwargs = self.kwargs | kwargs
         return self
     
-    def popkvp(self,*keys)->tuple:
+    def popkvps(self,*keys)->tuple:
         """Mutates the kwargsbase object
 
         Returns:
@@ -66,7 +78,7 @@ class kwargsbase(argsbase):
                 res.append((keys[i],v))
         return tuple(res) if lenkeys>1 else res[0]
 
-    def popval(self,*keys,nonsafe=True)->tuple:
+    def popvals(self,*keys,nonsafe=True)->tuple:
         lenkeys = len(keys)
         res = []
 
@@ -96,7 +108,7 @@ class kwargsbase(argsbase):
                     v = self.kwargs.pop(keys[i])
                     res.append(v)   
         """             
-    def getval(self,*keys)->tuple:
+    def getvals(self,*keys)->tuple:
         res = []
         lenkeys = len(keys)
         for i in range(lenkeys):
@@ -104,7 +116,7 @@ class kwargsbase(argsbase):
                 res.append(v)
         return tuple(res) if lenkeys>1 else res[0] 
         
-    def getkvp(self,*keys)->tuple:
+    def getkvps(self,*keys)->tuple:
         res = []
         lenkeys = len(keys)
         for i in range(lenkeys):
@@ -115,7 +127,7 @@ class kwargsbase(argsbase):
         return tuple(res) if lenkeys>1 else res[0]
         
 
-class tpargsbase(argsbase):
+class tuplargs(argsbase):
     def __init__(self,*args):
         self.args = args
         argsbase.__init__(self)
@@ -123,7 +135,7 @@ class tpargsbase(argsbase):
     def __getitem__(self,index):
         return self.args[index] 
 
-    def addelm(self, *args):
+    def addelms(self, *args):
         self.args = self.args + args
         return self
 
@@ -133,21 +145,21 @@ class tpargsbase(argsbase):
         """
         self.args = tuple(self.args[i] for i in range(len(self.args)) if i not in index)
     
-    def rmvelm(self,*elms)->None:
+    def rmvelms(self,*elms)->None:
         """
         Mutates argsbase object
         """
         self.args = tuple(self.args[i] for i in range(len(self.args)) if self.args[i] not in elms)  
 
-    def getelm(self,*index):
+    def getelms(self,*index):
         res =  tuple(self.args[i] for i in range(len(self.args)) if i in index)
         return res if len(res) >1 else res[0]
 
 
-class tpkwargsbase(tpargsbase,kwargsbase):
+class dictuplargs(tuplargs,dictargs):
     def __init__(self,*args,**kwargs):
-        tpargsbase.__init__(self,*args)
-        kwargsbase.__init__(self,**kwargs)  
+        tuplargs.__init__(self,*args)
+        dictargs.__init__(self,**kwargs)  
 
     #override
     def __getitem__(self,key):
