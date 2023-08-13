@@ -1,6 +1,7 @@
 import sys
 import json
 from json import JSONEncoder
+import copy
 import numpy as np
 
 from aistudio.abstraction.base_types import *
@@ -19,12 +20,24 @@ class JsonEncoders():
                     return self.default(o=str(bytes(o)))
                 if isinstance(o,set):
                     return self.default(o=list(o))
+                #
+                if isinstance(o, JSNode):
+                    return self.default(o = o.__data__)
+                #
+                if isinstance(o,dictargs):
+                    return self.default(o = o.kwargs)
+                #
+                if isinstance(o,tuplargs):
+                    return self.default(o=list(o.args))
+                
                 if hasattr(o,'__dict__'):
                     if isinstance(o,BaseException):
                         o.__dict__['_repr']=repr(o)
                     return self.default(o=o.__dict__)
                 if isinstance(o,tuple):
                     return self.default(o=list(o))
+                if isinstance(o,np.ndarray):
+                    return self.default(o = list(o))
                 ## try iterate
                 try:
                     for idx, el in enumerate(o):
@@ -134,27 +147,33 @@ def is_subtypeof(instance, *types)->bool:
 
 
 
-class Reporter():
+class JSNode():
     def __init__(self, **kwargs) -> None:
-        self.__dict__ = self.__dict__ | kwargs
-    def adddata(self,**kwargs):
+        self.__data__ = dictargs(**kwargs)
+    def update(self,**kwargs):
         #self.__dict__ = self.__dict__ | kwargs
-        for k,v in kwargs.items():
-            self.__dict__[k] = v.__dict__ if hasattr(v,'__dict__') else v
+        self.__data__.addkvps(**kwargs)
+        #for k,v in kwargs.items():
+        #    self.__data__[k] = v if is_typeof(Reporter) else v.__dict__ if hasattr(v,'__dict__') else v
         return self
-    def getdata(self, key):
-        if key not in self.__dict__:
+    def get_property(self, key):
+        if key not in self.__data__:
             raise KeyError('Given key {} does not exists in the Reporter object'.format(key))
-        return self.__dict__[key]
+        return self.__data__[key]
 
-    def toJson(self,verbose = False):
-        js = json.dumps(self,cls = JsonEncoders.DefaultJsonEncoder,indent=2)
+    def del_property(self,key):
+        if key not in self.__data__:
+            raise KeyError('Given key {} does not exists in the Reporter object'.format(key))
+        self.__data__.popkvps(key)
+        return self
+    
+    def toJson(self,verbose = True):
+        
+        data = copy.deepcopy(self)
+        js = json.dumps(data,cls = JsonEncoders.DefaultJsonEncoder,indent=2)
         if verbose:
             print(js)
         else:return js
-
-
-
 
 
 class Interrupter(dictuplargs,Exception,BaseException):
@@ -186,7 +205,7 @@ class Interrupter(dictuplargs,Exception,BaseException):
                 sys.exit('System is interrupted with a raised interruption object. Program is ended by user before raising the actual exception.')
         if 'throw' in self.kwargs:
             if self.kwargs['throw'] in acceptedactions:
-                raise innerexception if innerexception else self
+                raise (innerexception if innerexception else self)
 
 class InterruptPatcher(Interrupter):
     def __init__(self, *args, **kwargs):

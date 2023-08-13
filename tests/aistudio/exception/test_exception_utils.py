@@ -16,13 +16,20 @@ from aistudio.abstraction.base_types import *
 from aistudio.exception.exception_utils import *
 
 
+REPORT = JSNode(problem = JSNode(
+    title = 'DATA_PATH',
+    context = 'uber pickups across NY boroughs.',
+    target = 'pickups',
+    factors = ['temporal','seasonal','geographical']
+    )
+)
 
-df_original = pd.read_pickle('examples/dscienc-cstudy/Uber-Pickups-Weather/bin.upw-clear.df.pkl')
-df = df_original.copy()
+REPORT = REPORT.update(data = JSNode(
+    shape = 'shape'
+))
 
+sdsd = REPORT.get_property('data')
+sdsd = sdsd.adddata(a=2)
+tt = type(sdsd)
 
-int = Interrupter('some error occured','dont do stg',logit = True,throw = False)
-
-int = int.addData(logit=True,bar = 'foo')
-
-print(int.kwargs)
+print('asd')

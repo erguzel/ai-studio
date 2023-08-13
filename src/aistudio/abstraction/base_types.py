@@ -38,17 +38,6 @@ class argsbase(object):
 
         return tuple(res) if lenkeyorelms >1 else res[0]
 
-        """
-        if hasattr(self,'kwargs'):
-            for key in keyorelms:
-                if key in self.kwargs:
-                    return True
-        if hasattr(self,'args'):
-            for key in keyorelms:
-                if key in self.args:
-                    return True
-        return False
-        """
 
 class dictargs(argsbase):
     def __init__(self,**kwargs):
@@ -66,7 +55,7 @@ class dictargs(argsbase):
         return self
     
     def popkvps(self,*keys)->tuple:
-        """Mutates the kwargsbase object
+        """Mutates the dictargs object
 
         Returns:
             tuple: values of given keys
@@ -87,8 +76,6 @@ class dictargs(argsbase):
                 if keys[i] in self.kwargs:
                     v = self.kwargs.pop(keys[i])
                     res.append(v)  
-                       # kvpair = (keys[i],self.kwargs[keys[i]])
-                       # res.append(kvpair)
                 else: res.append(None)
         else:
              for i in range(len(keys)):
@@ -96,18 +83,7 @@ class dictargs(argsbase):
                 res.append(v)  
                 
         return tuple(res) if lenkeys>1 else res[0]
-                  
-        """
-        for i in range(len(keys)):
-                if nonsafe:
-                  if keys[i] in self.kwargs:
-                        kvpair = (keys[i],self.kwargs[keys[i]])
-                        res.append(kvpair)
-                  else: res.append(None)
-                else:
-                    v = self.kwargs.pop(keys[i])
-                    res.append(v)   
-        """             
+                             
     def getvals(self,*keys)->tuple:
         res = []
         lenkeys = len(keys)
@@ -120,10 +96,8 @@ class dictargs(argsbase):
         res = []
         lenkeys = len(keys)
         for i in range(lenkeys):
-      #      if keys[i] in self.kwargs:
                 kvpair = (keys[i],self.kwargs[keys[i]])
                 res.append(kvpair)
-       #     else: res.append(None)
         return tuple(res) if lenkeys>1 else res[0]
         
 
@@ -141,13 +115,13 @@ class tuplargs(argsbase):
 
     def rmvatidx(self,*index)->None:
         """
-        Mutates argsbase object
+        Mutates tuplargs object
         """
         self.args = tuple(self.args[i] for i in range(len(self.args)) if i not in index)
     
     def rmvelms(self,*elms)->None:
         """
-        Mutates argsbase object
+        Mutates tuplargs object
         """
         self.args = tuple(self.args[i] for i in range(len(self.args)) if self.args[i] not in elms)  
 
