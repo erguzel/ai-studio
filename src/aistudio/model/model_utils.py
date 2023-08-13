@@ -1,4 +1,4 @@
-from aistudio.exception.exception_utils import Reporter,InterruptPatcher
+from aistudio.exception.exception_utils import JSNode,InterruptPatcher
 from joblib import dump 
 from pathlib import Path
 from os import path,getcwd
@@ -6,7 +6,7 @@ from datetime import datetime
 import os
 
 
-def persist_ml_model(modelName:str,trainedModel,runTitle:str,resultDir:str=None,mainReport:Reporter=None):
+def persist_ml_model(modelName:str,trainedModel,runTitle:str,resultDir:str=None,mainReport:JSNode=None):
     """persists a trained ML model to the disk
 
     Args:
