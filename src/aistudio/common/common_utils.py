@@ -1,6 +1,6 @@
 from aistudio.abstraction.base_types import *
 import os
-from aistudio.exception.exception_utils import jsonize,Reporter
+from aistudio.exception.exception_utils import jsonize,JSNode
 
 
 def get_paint_area(height, sidelengths:tuplargs,exclusiondimensions:dictargs,roomname = None,fullroompathnamewithextension = None):
@@ -30,7 +30,7 @@ def get_paint_area(height, sidelengths:tuplargs,exclusiondimensions:dictargs,roo
 
     if fullroompathnamewithextension:
         path = os.path.join(fullroompathnamewithextension,roomname,f'{roomname}.json')
-        rep = Reporter(room = roomname,requiredarea = area, totalarea = total, exlucsionitems = exclusiondimensions.kwargs, excludedarea = excludearea)
+        rep = JSNode(room = roomname,requiredarea = area, totalarea = total, exlucsionitems = exclusiondimensions.kwargs, excludedarea = excludearea)
 
         jsonize(rep,fullsavename=path)
 
