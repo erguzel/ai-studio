@@ -1,5 +1,5 @@
 exc-help @ git+ssh://git@github.com/erguzel/exc-help.git # requires private key
 nltk==3.9.3
 numpy==1.23.5
-scikit-learn==1.2.0
+scikit-learn==1.5.0
 ai-studio @ .
