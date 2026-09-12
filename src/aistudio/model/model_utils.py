@@ -5,7 +5,7 @@ from pathlib import Path
 from joblib import dump
 
 from aistudio.common.log import logger
-from aistudio.exception.exception_utils import JSNode
+from aistudio.serialization.report import JSNode
 
 
 def persist_ml_model(modelName:str,trainedModel,runTitle:str,resultDir:str=None,mainReport:JSNode=None):
