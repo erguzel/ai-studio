@@ -11,7 +11,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import seaborn.objects as so
-import aistudio.plot.plot_utils as pu
 from aistudio.abstraction.base_types import *
 from aistudio.exception.exception_utils import *
 
