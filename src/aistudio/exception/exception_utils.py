@@ -19,6 +19,10 @@ class JsonEncoders():
                     return self.default(o=str(bytes(o)))
                 if isinstance(o,set):
                     return self.default(o=list(o))
+                # numpy scalars: np.float64 subclasses float and is dumpable,
+                # but np.int64 is not, so convert every numpy scalar here.
+                if isinstance(o,np.generic):
+                    return self.default(o=o.item())
                 #
                 if isinstance(o, JSNode):
                     return self.default(o = o.__data__)
