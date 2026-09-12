@@ -173,7 +173,7 @@ class JSNode():
         js = json.dumps(data,cls = JsonEncoders.DefaultJsonEncoder,indent=2)
         if verbose:
             print(js)
-        else:return js
+        return js
 
 
 class Interrupter(dictuplargs,Exception,BaseException):
