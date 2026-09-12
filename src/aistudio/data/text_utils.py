@@ -33,8 +33,8 @@ def tabularize_folder_labelled_text(
     fileName = ""
     addedHeader = False
 
-    lastIndex = len(re.split(r"[\/\\\]", inputPath)) - 1
-    fileName = re.split(r"[\/\\\]", inputPath)[lastIndex]
+    lastIndex = len(re.split(r"[/\\]", inputPath)) - 1
+    fileName = re.split(r"[/\\]", inputPath)[lastIndex]
 
     files = []
     # r=root, d=directories, f = files
@@ -42,8 +42,8 @@ def tabularize_folder_labelled_text(
         for file in f:
             if "." + inputExtension in file:
                 absfile = os.path.join(r, file)
-                indexLast = len(re.split(r"[\/\\\]", absfile)) - 1
-                label = re.split(r"[\/\\\]", absfile)[indexLast - 1]
+                indexLast = len(re.split(r"[/\\]", absfile)) - 1
+                label = re.split(r"[/\\]", absfile)[indexLast - 1]
                 content = open(absfile, "rb").read()
                 csvLine = "{0}{1}{2}{1}{3}".format(str(index), separator, content, label)
                 if (withHeader):
