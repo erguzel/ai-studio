@@ -1,4 +1,3 @@
-import sys
 import json
 from json import JSONEncoder
 import copy
@@ -174,61 +173,3 @@ class JSNode():
         if verbose:
             print(js)
         return js
-
-
-class Interrupter(dictuplargs,Exception,BaseException):
-
-    def __init__(self, *args, **kwargs):
-        """
-            Thrown in try block when an exception case caught.
-        
-            kwargs:
-            log: logs exception as serialized json
-            exit: exits app before throwing actual exception
-            throw: throws actual exception
-        """
-        super().__init__(*args, **kwargs)
-
-    def act(self, innerexception=None):
-        """Orders final action of the exception according to previously given kwargs.
-
-        Returns:
-            None: Depending on given kwargs, perform log, exit, throw actions
-        """
-        acceptedactions = ('True','true','TRUE', True)
-
-        if 'log' in self.kwargs:
-            if  self.kwargs['log'] in acceptedactions:
-                print(json.dumps(self,cls=JsonEncoders.DefaultJsonEncoder,indent=2))
-        if 'exit' in self.kwargs:
-            if self.kwargs['exit'] in acceptedactions:
-                sys.exit('System is interrupted with a raised interruption object. Program is ended by user before raising the actual exception.')
-        if 'throw' in self.kwargs:
-            if self.kwargs['throw'] in acceptedactions:
-                raise (innerexception if innerexception else self)
-
-class InterruptPatcher(Interrupter):
-    def __init__(self, *args, **kwargs):
-        """
-            Thrown in catch block to control the caught exceptions further.
-        
-            kwargs:
-            log: logs exception as serialized json
-            exit: exits app before throwing actual exception
-            throw: throws actual exception
-        """
-        super().__init__(*args, **kwargs)
-
-    def act(self,innerexception):
-        """Orders final action of the exception according to previously given kwargs.
-
-        Args:
-            innerexception (BaseException): Inner exception caught in catch block
-
-        Returns:
-            None: Depending on given kwargs, perform log, exit, throw actions
-        """
-        self.innerexception = innerexception
-        return super().act(innerexception=innerexception)
-
-
