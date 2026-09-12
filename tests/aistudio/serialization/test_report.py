@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import seaborn.objects as so
 from aistudio.abstraction.base_types import *
-from aistudio.exception.exception_utils import *
+from aistudio.serialization.report import *
 
 
 REPORT = JSNode(problem = JSNode(
