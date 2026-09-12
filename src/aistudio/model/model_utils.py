@@ -1,29 +1,43 @@
-from aistudio.exception.exception_utils import JSNode,InterruptPatcher
-from joblib import dump 
-from pathlib import Path
-from os import path,getcwd
-from datetime import datetime
 import os
+from datetime import datetime
+from pathlib import Path
+
+from joblib import dump
+
+from aistudio.common.log import logger
+from aistudio.exception.exception_utils import JSNode
 
 
 def persist_ml_model(modelName:str,trainedModel,runTitle:str,resultDir:str=None,mainReport:JSNode=None):
-    """persists a trained ML model to the disk
+    """Persists a trained ML model to the disk, next to its run report.
+
+    The model is written to
+    ``<resultDir>/models/<runTitle>/<timestamp>/<modelName>`` and, when a
+    report is given, ``report.json`` is written beside it.
 
     Args:
-        modelName (str): name of the model
-        trainedModel (_type_): trained model object
-        main_report (ReportObject): Report object associated with the model train process
-        file (str): the main file of execution to use as the name of the output folder
+        modelName (str): file name to store the model under.
+        trainedModel: the trained model object, persisted with joblib.
+        runTitle (str): the executing file, used to name the output folder.
+        resultDir (str, optional): root to write under. Defaults to the
+            current working directory.
+        mainReport (JSNode, optional): report describing the run.
+
+    Returns:
+        str: the directory the model and report were written to.
     """
-    try:
-        current_datetime  = datetime.now().strftime("_%d-%b-%Y_%H_%M_%S")
-        model_dir = path.join(getcwd() if resultDir== None else resultDir,'models',os.path.basename(runTitle),current_datetime)
-        Path(model_dir).mkdir(parents=True, exist_ok=True)
-        model_full_name = path.join(model_dir,modelName)
-        dump(trainedModel,model_full_name)
-        report_full_name = path.join(model_dir,'report.json')
-        if(mainReport!=None):
-            with open(report_full_name, 'w') as f:
-                f.write(mainReport.reportize())
-    except Exception as e:
-        InterruptPatcher('persist_model failed',e,log=True,throw=True).act()
+    current_datetime = datetime.now().strftime("_%d-%b-%Y_%H_%M_%S")
+    model_dir = os.path.join(
+        os.getcwd() if resultDir is None else resultDir,
+        'models', os.path.basename(runTitle), current_datetime,
+    )
+    Path(model_dir).mkdir(parents=True, exist_ok=True)
+
+    dump(trainedModel, os.path.join(model_dir, modelName))
+
+    if mainReport is not None:
+        with open(os.path.join(model_dir, 'report.json'), 'w') as f:
+            f.write(mainReport.toJson(verbose=False))
+
+    logger.info('persisted model {} to {}', modelName, model_dir)
+    return model_dir
