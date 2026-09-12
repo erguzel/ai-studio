@@ -1,5 +1,4 @@
 from importlib import import_module
-from exchelp.exception_helper import CoverException
 
 
 class ModuleMeta:
@@ -12,7 +11,7 @@ class ModuleMeta:
        
 
 def object_from_module(moduleName:str,objectName:str,subObjectName:str=None):
-    """Creates an instantiable meata-object of given module and object names combination
+    """Resolves the named object of the named module without instantiating it.
 
     Args:
         moduleName (str): name of the module
@@ -20,12 +19,14 @@ def object_from_module(moduleName:str,objectName:str,subObjectName:str=None):
         subObjectName (str, optional): Name of the sub class or function. Defaults to None.
 
     Returns:
-        _type_: a meta-object ready to be instantiated  """
-    try:
-        module = import_module(moduleName)
-        result_ = getattr(module, objectName)
-        if(subObjectName != None):
-            result_ = getattr(result_,subObjectName)
-        return result_
-    except Exception as e:
-        CoverException('object_from_module failed',e,dontThrow=True,logIt=True,shouldExit=True).adddata('locals',locals()).act()
+        The resolved class or function, ready to be called.
+
+    Raises:
+        ImportError: if the module cannot be imported.
+        AttributeError: if the module has no such object.
+    """
+    module = import_module(moduleName)
+    result_ = getattr(module, objectName)
+    if subObjectName is not None:
+        result_ = getattr(result_,subObjectName)
+    return result_
