@@ -1,4 +1,6 @@
-numpy==2.5.3
+# 2.5.x requires python 3.12; this is the newest release that fits the
+# supported floor of 3.11
+numpy==2.4.6
 scikit-learn==1.9.0
 snowballstemmer==3.1.1
 # ai-studio itself, from the repo root; install from this directory, since pip
