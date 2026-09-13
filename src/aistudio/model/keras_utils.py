@@ -47,13 +47,19 @@ def build_sequential_model(spec: dict, compile_model: bool = True):
 def build_transfer_model(spec: dict, compile_model: bool = True):
     """Continues a pretrained model with the declared layers.
 
-    The pretrained model is instantiated from ``base_model``, and the declared
-    layers are chained onto the output of the layer named by ``base_layer`` -
-    so which part of the pretrained model is reused is itself declared.
+    The pretrained model is instantiated from ``base_model`` and cut at the
+    layer named by ``base_layer``, so which part of it is reused is declared
+    too. ``layers`` continue from there, and ``input_layers`` - rescaling or
+    normalization, say - run before it, which matters because a pretrained
+    model expects the inputs it was trained on.
+
+    Its weights are frozen unless ``base_trainable`` says otherwise: training
+    them at the learning rate a fresh head needs is what undoes a pretrained
+    model in the first few batches.
 
     Args:
         spec (dict): the model spec, carrying ``base_model``, ``base_layer``
-            and ``layers``.
+            and ``layers``, optionally ``input_layers`` and ``base_trainable``.
         compile_model (bool, optional): compile the model with the declared
             arguments. Defaults to True.
 
@@ -61,11 +67,19 @@ def build_transfer_model(spec: dict, compile_model: bool = True):
         The keras model.
     """
     base = instantiate(spec['base_model'])
-    outputs = base.get_layer(spec['base_layer']).output
+    trunk = tf.keras.Model(base.input, base.get_layer(spec['base_layer']).output,
+                           name=base.name)
+    trunk.trainable = spec.get('base_trainable', False)
+
+    inputs = tf.keras.Input(shape=base.input_shape[1:])
+    outputs = inputs
+    for layer in instantiate(spec.get('input_layers', [])):
+        outputs = layer(outputs)
+    outputs = trunk(outputs)
     for layer in instantiate(spec['layers']):
         outputs = layer(outputs)
 
-    model = tf.keras.Model(base.input, outputs)
+    model = tf.keras.Model(inputs, outputs)
     return compile_declared(model, spec) if compile_model else model
 
 
