@@ -1,0 +1,114 @@
+{
+  "title": "run_pipeline.py",
+  "config": {
+    "initialize": {
+      "source": "examples/bbc-news-classification/data/raw/bbc",
+      "extension": ".txt",
+      "type": "text-document"
+    },
+    "cleanse": {
+      "char_cleaner_function": {
+        "module": "aistudio.data.text_utils",
+        "object": "clear_default_chars"
+      },
+      "stemming_lemmatization_function": {
+        "module": "aistudio.data.text_utils",
+        "object": "stemming_lematization"
+      },
+      "stemmer_or_lemmatizer_instance": {
+        "module": "snowballstemmer",
+        "object": "stemmer",
+        "hyper_params": {
+          "lang": "english"
+        }
+      }
+    },
+    "prepare": {
+      "vectorizer_instance": {
+        "module": "sklearn.feature_extraction.text",
+        "object": "CountVectorizer",
+        "hyper_params": {
+          "max_features": 1500,
+          "min_df": 5,
+          "max_df": 0.7
+        },
+        "stop_words": {
+          "module": "sklearn.feature_extraction.text",
+          "object": "ENGLISH_STOP_WORDS"
+        }
+      },
+      "transformer_instance": {
+        "module": "sklearn.feature_extraction.text",
+        "object": "TfidfTransformer"
+      },
+      "test_size": 0.2,
+      "random_state": 0
+    },
+    "execute": {
+      "model_instance": {
+        "module": "sklearn.ensemble",
+        "object": "RandomForestClassifier",
+        "hyper_params": {
+          "n_estimators": 500,
+          "random_state": 0
+        }
+      }
+    }
+  },
+  "document_count": 2225,
+  "target_names": [
+    "business",
+    "entertainment",
+    "politics",
+    "sport",
+    "tech"
+  ],
+  "train_size": 1780,
+  "test_size": 445,
+  "feature_count": 1500,
+  "metrics": {
+    "business": {
+      "precision": 0.9326923076923077,
+      "recall": 0.9509803921568627,
+      "f1-score": 0.941747572815534,
+      "support": 102.0
+    },
+    "entertainment": {
+      "precision": 0.9746835443037974,
+      "recall": 0.9166666666666666,
+      "f1-score": 0.9447852760736196,
+      "support": 84.0
+    },
+    "politics": {
+      "precision": 0.9473684210526315,
+      "recall": 0.9230769230769231,
+      "f1-score": 0.935064935064935,
+      "support": 78.0
+    },
+    "sport": {
+      "precision": 0.9716981132075472,
+      "recall": 1.0,
+      "f1-score": 0.9856459330143541,
+      "support": 103.0
+    },
+    "tech": {
+      "precision": 0.9625,
+      "recall": 0.9871794871794872,
+      "f1-score": 0.9746835443037974,
+      "support": 78.0
+    },
+    "accuracy": 0.9573033707865168,
+    "macro avg": {
+      "precision": 0.9577884772512568,
+      "recall": 0.9555806938159879,
+      "f1-score": 0.9563854522544479,
+      "support": 445.0
+    },
+    "weighted avg": {
+      "precision": 0.9574442148508246,
+      "recall": 0.9573033707865168,
+      "f1-score": 0.9570834339519283,
+      "support": 445.0
+    }
+  }
+}
