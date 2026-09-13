@@ -178,3 +178,6 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/ 
 *.DS_Store
+
+# example datasets are downloaded, not committed (see each example download_data.py)
+examples/*/data/
