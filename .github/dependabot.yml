@@ -1,0 +1,18 @@
+version: 2
+updates:
+  # the package itself
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+
+  # the example's pinned stack
+  - package-ecosystem: pip
+    directory: /examples/bbc-news-classification
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
