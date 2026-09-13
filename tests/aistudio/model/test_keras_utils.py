@@ -78,7 +78,8 @@ def test_a_model_is_not_compiled_when_asked_not_to_be():
     assert not model.compiled
 
 
-def test_transfer_models_continue_the_named_layer():
+def transfer_spec(**overrides):
+    """A VGG16 head, with weights=None so no 58 MB download is needed."""
     spec = {
         'base_model': {'module': 'tensorflow.keras.applications', 'object': 'VGG16',
                        'hyper_params': {'weights': None, 'include_top': False,
@@ -91,13 +92,63 @@ def test_transfer_models_continue_the_named_layer():
         ],
         'compile': COMPILE,
     }
+    spec.update(overrides)
+    return spec
 
-    model = build_transfer_model(spec)
 
-    names = [layer.name for layer in model.layers]
+def trunk_of(model):
+    """The pretrained part, which sits in the model as one nested model."""
+    return next(layer for layer in model.layers if isinstance(layer, tf.keras.Model))
+
+
+def test_transfer_models_continue_the_named_layer():
+    model = build_transfer_model(transfer_spec())
+
+    names = [layer.name for layer in trunk_of(model).layers]
     assert 'block3_pool' in names
     assert 'block4_conv1' not in names  # the rest of VGG16 is left behind
     assert model.output_shape == (None, 2)
+
+
+def test_the_pretrained_base_is_frozen_by_default():
+    """Training it at the rate a fresh head needs is what destroys it."""
+    model = build_transfer_model(transfer_spec())
+
+    assert trunk_of(model).trainable is False
+
+    trunk_weights = {id(weight) for weight in trunk_of(model).weights}
+    assert model.trainable_weights  # the head still learns
+    assert not any(id(weight) in trunk_weights for weight in model.trainable_weights)
+
+
+def test_the_pretrained_base_can_be_unfrozen():
+    model = build_transfer_model(transfer_spec(base_trainable=True))
+
+    assert trunk_of(model).trainable is True
+    trunk_weights = {id(w) for w in trunk_of(model).weights}
+    assert any(id(w) in trunk_weights for w in model.trainable_weights)
+
+
+def test_input_layers_run_before_the_pretrained_base():
+    model = build_transfer_model(transfer_spec(input_layers=[
+        {'module': 'tensorflow.keras.layers', 'object': 'Rescaling',
+         'hyper_params': {'scale': 1.0 / 255}},
+    ]))
+
+    kinds = [type(layer).__name__ for layer in model.layers]
+    assert kinds.index('Rescaling') < kinds.index(type(trunk_of(model)).__name__)
+
+
+def test_a_transfer_model_trains(dataset):
+    images, labels = dataset
+    model = build_transfer_model(transfer_spec(base_model={
+        'module': 'tensorflow.keras.applications', 'object': 'VGG16',
+        'hyper_params': {'weights': None, 'include_top': False, 'input_shape': (32, 32, 3)}}))
+
+    padded = np.pad(images, ((0, 0), (12, 12), (12, 12), (0, 0)))
+    history = model.fit(padded, labels, epochs=1, batch_size=8, verbose=0)
+
+    assert 'loss' in history.history
 
 
 def test_build_model_dispatches_on_the_spec():
