@@ -3,7 +3,7 @@ from pathlib import Path
 
 import joblib
 
-from aistudio.model.model_utils import persist_ml_model, save_model
+from aistudio.model.model_utils import create_run_dir, persist_ml_model, save_model
 from aistudio.serialization.report import JSNode
 
 
@@ -68,3 +68,45 @@ def test_persist_ml_model_gives_every_run_its_own_folder(tmp_path):
     runs = {persist_ml_model('m.sav', {}, 'run_pipeline.py', str(tmp_path)) for _ in range(3)}
 
     assert len(runs) == 3
+
+
+def test_create_run_dir_makes_a_fresh_folder_per_run(tmp_path):
+    runs = {create_run_dir('run_pipeline.py', str(tmp_path)) for _ in range(3)}
+
+    assert len(runs) == 3
+    assert all(Path(run).is_dir() for run in runs)
+
+
+def test_create_run_dir_puts_the_run_under_the_title(tmp_path):
+    run = Path(create_run_dir('run_pipeline.py', str(tmp_path)))
+
+    assert run.parent == tmp_path / 'models' / 'run_pipeline.py'
+
+
+def test_several_models_can_share_one_run(tmp_path):
+    """A run comparing architectures keeps them together under one report."""
+    run_dir = persist_ml_model(
+        'BaseModel.keras', SelfSavingModel(), 'run_pipeline.py', str(tmp_path),
+        mainReport=JSNode(models={'BaseModel': {'accuracy': 0.9}}),
+    )
+
+    again = persist_ml_model(
+        'Transfer.keras', SelfSavingModel(), 'run_pipeline.py', runDir=run_dir,
+        mainReport=JSNode(models={'BaseModel': {'accuracy': 0.9},
+                                  'Transfer': {'accuracy': 0.95}}),
+    )
+
+    assert again == run_dir
+    assert (Path(run_dir) / 'BaseModel.keras').exists()
+    assert (Path(run_dir) / 'Transfer.keras').exists()
+
+
+def test_the_report_of_a_shared_run_describes_every_model(tmp_path):
+    run_dir = persist_ml_model('a.sav', {}, 'run_pipeline.py', str(tmp_path),
+                               mainReport=JSNode(models={'a': {'accuracy': 0.9}}))
+    persist_ml_model('b.sav', {}, 'run_pipeline.py', runDir=run_dir,
+                     mainReport=JSNode(models={'a': {'accuracy': 0.9},
+                                               'b': {'accuracy': 0.95}}))
+
+    report = json.loads((Path(run_dir) / 'report.json').read_text())
+    assert sorted(report['models']) == ['a', 'b']

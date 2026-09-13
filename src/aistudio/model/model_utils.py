@@ -27,35 +27,20 @@ def save_model(trainedModel, path: str) -> None:
         dump(trainedModel, path)
 
 
-def persist_ml_model(
-    modelName:str,
-    trainedModel,
-    runTitle:str,
-    resultDir:str|None=None,
-    mainReport:JSNode|None=None,
-):
-    """Persists a trained ML model to the disk, next to its run report.
+def create_run_dir(runTitle:str, resultDir:str|None=None) -> str:
+    """Creates the directory one run writes everything into.
 
-    The model is written to
-    ``<resultDir>/models/<runTitle>/<timestamp>/<modelName>`` and, when a
-    report is given, ``report.json`` is written beside it. The run folder is
+    The directory is ``<resultDir>/models/<runTitle>/<timestamp>`` and is
     always freshly created; runs landing on the same timestamp get a ``-2``,
-    ``-3``, ... suffix so no run overwrites another's report.
+    ``-3``, ... suffix, so no run can overwrite another's results.
 
     Args:
-        modelName (str): file name to store the model under. Give it the
-            extension the model's own format expects - ``.keras`` for a keras
-            model, say.
-        trainedModel: the trained model object. A model that knows how to
-            persist itself, as keras models do, is saved through its own
-            ``save(path)``; anything else is pickled with joblib.
         runTitle (str): the executing file, used to name the output folder.
         resultDir (str, optional): root to write under. Defaults to the
             current working directory.
-        mainReport (JSNode, optional): report describing the run.
 
     Returns:
-        str: the directory the model and report were written to.
+        str: the directory that was created.
     """
     run_root = os.path.join(
         os.getcwd() if resultDir is None else resultDir,
@@ -69,9 +54,49 @@ def persist_ml_model(
         model_dir = os.path.join(run_root, stamp + suffix)
         try:
             Path(model_dir).mkdir(parents=True, exist_ok=False)
-            break
+            return model_dir
         except FileExistsError:
             attempt += 1
+
+
+def persist_ml_model(
+    modelName:str,
+    trainedModel,
+    runTitle:str,
+    resultDir:str|None=None,
+    mainReport:JSNode|None=None,
+    runDir:str|None=None,
+):
+    """Persists a trained ML model to the disk, next to its run report.
+
+    The model is written to
+    ``<resultDir>/models/<runTitle>/<timestamp>/<modelName>`` and, when a
+    report is given, ``report.json`` is written beside it.
+
+    A run that trains several models - one per architecture being compared -
+    passes the directory the first call returned back in as ``runDir``, so all
+    of them land in the same run with one report describing the lot. The report
+    is rewritten on every call, which also means a run that dies half way
+    through still leaves what it had reached.
+
+    Args:
+        modelName (str): file name to store the model under. Give it the
+            extension the model's own format expects - ``.keras`` for a keras
+            model, say.
+        trainedModel: the trained model object. A model that knows how to
+            persist itself, as keras models do, is saved through its own
+            ``save(path)``; anything else is pickled with joblib.
+        runTitle (str): the executing file, used to name the output folder.
+        resultDir (str, optional): root to write under. Defaults to the
+            current working directory.
+        mainReport (JSNode, optional): report describing the run.
+        runDir (str, optional): an existing run directory to write into,
+            instead of creating one. runTitle and resultDir are then unused.
+
+    Returns:
+        str: the directory the model and report were written to.
+    """
+    model_dir = create_run_dir(runTitle, resultDir) if runDir is None else runDir
 
     save_model(trainedModel, os.path.join(model_dir, modelName))
 
