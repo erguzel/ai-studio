@@ -10,6 +10,10 @@ Because augmentation is a layer in keras 3 rather than a generator wrapped
 around the training loop, and because a transfer model differs from a plain one
 only by naming a base, all three run through the same few lines below.
 
+The images are split into train, validation and test by file name, once, with
+the seed CONFIG declares - so the score at the end comes from images no model
+was trained on and no early stopping ever looked at.
+
 The run writes one report covering every architecture: report.json for
 machines, report.md with the confusion matrices and training curves for people,
 and each trained model beside them.
@@ -25,13 +29,14 @@ Then, from this directory:
 """
 import argparse
 import os
+from pathlib import Path
 
 import matplotlib
 import numpy as np
 import tensorflow as tf
 from sklearn.metrics import ConfusionMatrixDisplay, classification_report
 
-from aistudio.model.keras_utils import build_model, fit_params
+from aistudio.model.keras_utils import build_model, fit_params, true_and_predicted
 from aistudio.model.model_utils import persist_ml_model
 from aistudio.serialization.report import JSNode
 from aistudio.serialization.run_report import write_run_report
@@ -88,8 +93,8 @@ CONFIG = {
         'source': os.path.join(HERE, 'data', 'raw', 'cell_images'),
         'image_size': (64, 64),
         'batch_size': 32,
-        # a third is held out, then halved into validation and test
-        'holdout_split': 0.3,
+        'validation_split': 0.15,
+        'test_split': 0.15,
         'seed': 35,
     },
     'models': {
@@ -124,11 +129,92 @@ CONFIG = {
 }
 
 
+IMAGE_SUFFIXES = ('.png', '.jpg', '.jpeg')
+
+
+def split_files(config: dict):
+    """Cuts the image files into fixed train, validation and test lists.
+
+    The split is made over the file names, not over the stream of images keras
+    would hand out: a dataset reshuffles on every pass, so slicing one gives a
+    different set of images each time it is read, and a test set that leaks
+    into validation. Splitting the names once, with a declared seed, gives
+    three sets that are disjoint by construction and identical on every run.
+
+    The cut is made class by class, so each set carries the same class balance
+    as the whole.
+
+    Args:
+        config (dict): the initialize block of CONFIG.
+
+    Returns:
+        tuple: the class names, and three (paths, labels) pairs.
+    """
+    source = Path(config['source'])
+    class_names = sorted(d.name for d in source.iterdir() if d.is_dir())
+
+    rng = np.random.default_rng(config['seed'])
+    parts = ([], [], [])
+
+    # each class is cut by the same fractions, so every set keeps the balance
+    # of the whole - which a single cut across a shuffled list only gets right
+    # on average
+    for index, name in enumerate(class_names):
+        files = sorted(str(path) for path in (source / name).iterdir()
+                       if path.suffix.lower() in IMAGE_SUFFIXES)
+        files = np.array(files)[rng.permutation(len(files))]
+
+        validation_size = int(len(files) * config['validation_split'])
+        test_size = int(len(files) * config['test_split'])
+        train_end = len(files) - validation_size - test_size
+        validation_end = train_end + validation_size
+
+        for part, chunk in zip(parts, (files[:train_end],
+                                       files[train_end:validation_end],
+                                       files[validation_end:]), strict=True):
+            part.append((chunk, np.full(len(chunk), index)))
+
+    splits = []
+    for part in parts:
+        paths = np.concatenate([chunk for chunk, _ in part])
+        labels = np.concatenate([chunk for _, chunk in part])
+        order = rng.permutation(len(paths))
+        splits.append((paths[order], labels[order]))
+
+    return class_names, tuple(splits)
+
+
+def as_dataset(paths, labels, config: dict, class_count: int, shuffle: bool):
+    """Builds a batched dataset out of one list of image files.
+
+    Args:
+        paths: the image files.
+        labels: their class indices.
+        config (dict): the initialize block of CONFIG.
+        class_count (int): number of classes, for the one hot labels.
+        shuffle (bool): shuffle between epochs, which only training wants.
+
+    Returns:
+        The dataset.
+    """
+    size = tuple(config['image_size'])
+
+    def load(path, label):
+        image = tf.io.decode_image(tf.io.read_file(path), channels=3, expand_animations=False)
+        return tf.image.resize(image, size), label
+
+    dataset = tf.data.Dataset.from_tensor_slices(
+        (paths, tf.keras.utils.to_categorical(labels, class_count)))
+    if shuffle:
+        dataset = dataset.shuffle(len(paths), seed=config['seed'])
+    return (dataset
+            .map(load, num_parallel_calls=tf.data.AUTOTUNE)
+            .batch(config['batch_size'])
+            .prefetch(tf.data.AUTOTUNE))
+
+
 def load_data(config: dict, limit_batches: int | None = None):
     """Reads the image folders into train, validation and test datasets.
-
-    keras splits a folder in two; the second half is halved again here, so the
-    score reported at the end comes from images no model was tuned against.
 
     Args:
         config (dict): the initialize block of CONFIG.
@@ -136,45 +222,20 @@ def load_data(config: dict, limit_batches: int | None = None):
             dataset, for a quick run.
 
     Returns:
-        tuple: train, validation and test datasets, plus the class names.
+        tuple: the three datasets, the class names, and the three set sizes.
     """
-    common = {
-        'image_size': config['image_size'],
-        'batch_size': config['batch_size'],
-        'label_mode': 'categorical',
-        'seed': config['seed'],
-        'validation_split': config['holdout_split'],
-    }
-    train = tf.keras.utils.image_dataset_from_directory(
-        config['source'], subset='training', **common)
-    holdout = tf.keras.utils.image_dataset_from_directory(
-        config['source'], subset='validation', **common)
-
-    class_names = list(train.class_names)
-    half = holdout.cardinality().numpy() // 2
-    validation, test = holdout.take(half), holdout.skip(half)
+    class_names, splits = split_files(config)
+    train, validation, test = (
+        as_dataset(paths, labels, config, len(class_names), shuffle=shuffle)
+        for (paths, labels), shuffle in zip(splits, (True, False, False), strict=True)
+    )
 
     if limit_batches:
-        train = train.take(limit_batches)
-        validation = validation.take(limit_batches)
-        test = test.take(limit_batches)
+        train, validation, test = (d.take(limit_batches) for d in (train, validation, test))
 
-    return train, validation, test, class_names
-
-
-def true_and_predicted(model, dataset):
-    """Runs the model over a dataset and returns the labels next to its guesses.
-
-    Args:
-        model: a trained keras model.
-        dataset: a batched dataset of images and one hot labels.
-
-    Returns:
-        tuple: two arrays of class indices, the true ones and the predicted.
-    """
-    true = np.concatenate([np.argmax(labels, axis=1) for _, labels in dataset])
-    predicted = np.argmax(model.predict(dataset, verbose=0), axis=1)
-    return true, predicted
+    sizes = {name: len(paths) for name, (paths, _) in
+             zip(('train', 'validation', 'test'), splits, strict=True)}
+    return train, validation, test, class_names, sizes
 
 
 def confusion_figure(true, predicted, class_names, title: str):
@@ -231,15 +292,16 @@ def main(config: dict = CONFIG, limit_batches: int | None = None,
         JSNode: the run report.
     """
     title = os.path.basename(__file__)
-    train, validation, test, class_names = load_data(config['initialize'], limit_batches)
+    train, validation, test, class_names, sizes = load_data(
+        config['initialize'], limit_batches)
 
     report = JSNode(
         title=title,
         config=config,
         class_names=class_names,
-        train_batches=int(train.cardinality()),
-        validation_batches=int(validation.cardinality()),
-        test_batches=int(test.cardinality()),
+        train_images=sizes['train'],
+        validation_images=sizes['validation'],
+        test_images=sizes['test'],
     )
     summary, figures = {}, {}
     run_dir = None
