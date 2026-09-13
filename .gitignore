@@ -181,3 +181,4 @@ cython_debug/
 
 # example datasets are downloaded, not committed (see each example download_data.py)
 examples/*/data/
+.continue/
