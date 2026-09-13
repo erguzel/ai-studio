@@ -5,7 +5,6 @@ import numpy as np
 import pytest
 
 from aistudio.data.meta.module_utils import (
-    ModuleMeta,
     instantiate,
     is_spec,
     object_from_module,
@@ -31,24 +30,14 @@ def test_object_from_module_raises_on_unknown_object():
         object_from_module('json', 'no_such_object')
 
 
-def test_module_meta_keeps_the_names_it_resolved():
-    meta = ModuleMeta(moduleName='json', objectName='dumps')
-
-    assert meta.modulename == 'json'
-    assert meta.objectName == 'dumps'
-    assert meta.subobjectName is None
-
-
-def test_module_meta_caller_runs_the_resolved_function():
+def test_resolve_spec_reaches_across_the_package():
     """The declare-by-name path the examples rely on, without importing the callee."""
-    caller = ModuleMeta(
-        moduleName='aistudio.data.text_utils',
-        objectName='clear_default_chars',
-    ).caller
+    cleaner = resolve_spec({
+        'module': 'aistudio.data.text_utils',
+        'object': 'clear_default_chars',
+    })
 
-    result = caller(data=np.array([b'multiple    spaces data']))
-
-    assert list(result) == ['multiple spaces data']
+    assert list(cleaner(data=np.array([b'multiple    spaces data']))) == ['multiple spaces data']
 
 
 def test_is_spec_needs_both_keys():
