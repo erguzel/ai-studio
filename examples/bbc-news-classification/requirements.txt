@@ -4,6 +4,8 @@ matplotlib==3.11.2
 numpy==2.4.6
 scikit-learn==1.9.0
 snowballstemmer==3.1.1
-# ai-studio itself, from the repo root; install from this directory, since pip
-# resolves a relative path against the working directory, not this file.
-../..
+# ai-studio itself, from the repo root, installed in place: the version never
+# changes, so a plain install would be skipped as satisfied and leave a stale
+# copy behind. Install from this directory - pip resolves a relative path
+# against the working directory, not against this file.
+-e ../..
