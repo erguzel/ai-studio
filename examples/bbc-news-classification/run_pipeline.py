@@ -5,8 +5,9 @@ model - is named in CONFIG as a module and object pair, and resolved at run time
 by aistudio.data.meta.module_utils. Swapping the model or the vectorizer is an
 edit to CONFIG, not to the code below.
 
-The run is summarised in a JSNode report which is written next to the trained
-model as report.json.
+The run is summarised in a JSNode report, written next to the trained model as
+report.json for machines and report.md - with the confusion matrix - for
+people.
 
 Before running, fetch the corpus:
 
@@ -19,14 +20,19 @@ Then, from this directory:
 import os
 from pathlib import Path
 
+import matplotlib
 import numpy as np
 from sklearn.datasets import load_files
-from sklearn.metrics import classification_report
+from sklearn.metrics import ConfusionMatrixDisplay, classification_report
 from sklearn.model_selection import train_test_split
 
 from aistudio.data.meta.module_utils import instantiate, resolve_spec
 from aistudio.model.model_utils import persist_ml_model
 from aistudio.serialization.report import JSNode
+from aistudio.serialization.run_report import write_run_report
+
+matplotlib.use('Agg')  # the run writes figures to disk, it never opens a window
+import matplotlib.pyplot as plt
 
 HERE = Path(__file__).parent
 
@@ -121,8 +127,18 @@ def main(config: dict = CONFIG) -> JSNode:
         y_test, y_pred, target_names=target_names, output_dict=True))
 
     model_name = model_spec['object'] + '.sav'
-    persist_ml_model(modelName=model_name, trainedModel=model,
-                     runTitle=report.get_property('title'), mainReport=report)
+    run_dir = persist_ml_model(modelName=model_name, trainedModel=model,
+                               runTitle=report.get_property('title'), mainReport=report)
+
+    figure, axes = plt.subplots(figsize=(6, 5))
+    ConfusionMatrixDisplay.from_predictions(
+        y_test, y_pred, display_labels=target_names, ax=axes, colorbar=False,
+        cmap='Blues', xticks_rotation=45)
+    axes.set_title('{} - accuracy {:.4f}'.format(
+        model_spec['object'], report.get_property('metrics')['accuracy']))
+    write_run_report(report, run_dir, figures={'Confusion matrix': figure})
+    plt.close(figure)
+
     return report
 
 
