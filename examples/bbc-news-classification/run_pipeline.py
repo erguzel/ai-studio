@@ -1,6 +1,6 @@
 """Classify BBC news articles with a pipeline that is declared, not hard coded.
 
-Every step of the pipeline - the cleaners, the lemmatizer, the vectorizer, the
+Every step of the pipeline - the cleaners, the stemmer, the vectorizer, the
 model - is named in CONFIG as a module and object pair, and resolved at run time
 by aistudio.data.meta.module_utils. Swapping the model or the vectorizer is an
 edit to CONFIG, not to the code below.
@@ -19,7 +19,6 @@ Then, from this directory:
 import os
 from pathlib import Path
 
-import nltk
 import numpy as np
 from sklearn.datasets import load_files
 from sklearn.metrics import classification_report
@@ -47,8 +46,9 @@ CONFIG = {
             'object': 'stemming_lematization',
         },
         'stemmer_or_lemmatizer_instance': {
-            'module': 'nltk.stem',
-            'object': 'WordNetLemmatizer',
+            'module': 'snowballstemmer',
+            'object': 'stemmer',
+            'hyper_params': {'lang': 'english'},
         },
     },
     'prepare': {
@@ -56,12 +56,10 @@ CONFIG = {
             'module': 'sklearn.feature_extraction.text',
             'object': 'CountVectorizer',
             'hyper_params': {'max_features': 1500, 'min_df': 5, 'max_df': 0.7},
-            'stop_words_function': {
-                'module': 'nltk.corpus',
-                'object': 'stopwords',
-                'subObject': 'words',
+            'stop_words': {
+                'module': 'sklearn.feature_extraction.text',
+                'object': 'ENGLISH_STOP_WORDS',
             },
-            'language': 'english',
         },
         'transformer_instance': {
             'module': 'sklearn.feature_extraction.text',
@@ -97,14 +95,15 @@ def main(config: dict = CONFIG) -> JSNode:
     # cleanse
     cleanse = config['cleanse']
     docs = resolve(cleanse['char_cleaner_function'])(data=X)
-    lemmatizer = resolve(cleanse['stemmer_or_lemmatizer_instance'])()
+    stemmer_spec = cleanse['stemmer_or_lemmatizer_instance']
+    stemmer = resolve(stemmer_spec)(**stemmer_spec.get('hyper_params', {}))
     docs = resolve(cleanse['stemming_lemmatization_function'])(
-        stem_or_lemmatizer=lemmatizer, data=docs)
+        stem_or_lemmatizer=stemmer, data=docs)
 
     # prepare
     prepare = config['prepare']
     vectorizer_spec = prepare['vectorizer_instance']
-    stop_words = resolve(vectorizer_spec['stop_words_function'])(vectorizer_spec['language'])
+    stop_words = sorted(resolve(vectorizer_spec['stop_words']))
     vectorizer = resolve(vectorizer_spec)(**vectorizer_spec['hyper_params'],
                                           stop_words=stop_words)
     counts = vectorizer.fit_transform(docs).toarray()
@@ -134,6 +133,4 @@ def main(config: dict = CONFIG) -> JSNode:
 
 
 if __name__ == '__main__':
-    nltk.download('stopwords')
-    nltk.download('wordnet')
     main()

@@ -22,6 +22,13 @@ class FakeBoth(FakeLemmatizer, FakeStemmer):
     """Exposes both methods, so lemmatize has to win."""
 
 
+class FakeSnowball:
+    """Stands in for a snowballstemmer stemmer, which names its method stemWord."""
+
+    def stemWord(self, token):
+        return token[:4]
+
+
 def test_clear_default_chars_cleans_byte_texts():
     data = np.array([
         b'some data without any sign',
@@ -65,6 +72,14 @@ def test_stemming_lematization_prefers_lemmatize_over_stem():
     result = stemming_lematization(stem_or_lemmatizer=FakeBoth(), data=data)
 
     assert list(result) == ['multiple space']
+
+
+def test_stemming_lematization_accepts_a_stemword_method():
+    data = np.array(['multiple spaces data', 'special characters'])
+
+    result = stemming_lematization(stem_or_lemmatizer=FakeSnowball(), data=data)
+
+    assert list(result) == ['mult spac data', 'spec char']
 
 
 def test_stemming_lematization_rejects_non_arrays():

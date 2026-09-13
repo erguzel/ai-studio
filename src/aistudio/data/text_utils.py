@@ -7,10 +7,10 @@ def stemming_lematization(stem_or_lemmatizer, data: np.ndarray) -> np.ndarray:
     """Stem or lemmatize every text in the given array.
 
     Args:
-        stem_or_lemmatizer: any object exposing either a ``lemmatize(token)``
-            or a ``stem(token)`` method, such as nltk's ``WordNetLemmatizer``
-            or any ``StemmerI`` implementation. ``lemmatize`` wins if both
-            are present.
+        stem_or_lemmatizer: any object exposing a ``lemmatize(token)``,
+            ``stem(token)`` or ``stemWord(token)`` method, such as
+            snowballstemmer's stemmers or nltk's ``WordNetLemmatizer``. The
+            first of those three that is present wins.
         data: 1d array of texts, shape (x,).
 
     Returns:
@@ -18,19 +18,19 @@ def stemming_lematization(stem_or_lemmatizer, data: np.ndarray) -> np.ndarray:
 
     Raises:
         TypeError: if data is not an ndarray, or the given object exposes
-            neither method.
+            none of those methods.
     """
     if not isinstance(data, np.ndarray):
         raise TypeError(f'data has to be an ndarray, not {type(data).__name__}')
 
-    if hasattr(stem_or_lemmatizer, 'lemmatize'):
-        reduce_token = stem_or_lemmatizer.lemmatize
-    elif hasattr(stem_or_lemmatizer, 'stem'):
-        reduce_token = stem_or_lemmatizer.stem
+    for method in ('lemmatize', 'stem', 'stemWord'):
+        reduce_token = getattr(stem_or_lemmatizer, method, None)
+        if reduce_token is not None:
+            break
     else:
         raise TypeError(
-            'stem_or_lemmatizer has to expose a lemmatize or stem method, '
-            f'and {type(stem_or_lemmatizer).__name__} exposes neither'
+            'stem_or_lemmatizer has to expose a lemmatize, stem or stemWord '
+            f'method, and {type(stem_or_lemmatizer).__name__} exposes none'
         )
 
     def reduce_text(k):
