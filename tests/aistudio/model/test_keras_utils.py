@@ -140,7 +140,7 @@ class BrightnessModel:
     between its guesses and the labels can only come from the pairing.
     """
 
-    def predict(self, inputs, verbose=0):
+    def __call__(self, inputs, training=False):
         bright = np.mean(np.asarray(inputs), axis=(1, 2, 3)) > 0.5
         return np.stack([~bright, bright], axis=1).astype('float32')
 
