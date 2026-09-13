@@ -1,19 +1,6 @@
 from importlib import import_module
 
 
-class ModuleMeta:
-    def __init__(self,moduleName:str,objectName:str,subObjectName:str|None=None) -> None:
-        self.modulename = moduleName
-        self.objectName = objectName
-        self.subobjectName = subObjectName
-        self.caller = object_from_module(
-            moduleName=self.modulename,
-            objectName=self.objectName,
-            subObjectName=self.subobjectName,
-        )
-        
-       
-
 def object_from_module(moduleName:str,objectName:str,subObjectName:str|None=None):
     """Resolves the named object of the named module without instantiating it.
 

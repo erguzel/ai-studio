@@ -24,7 +24,7 @@ from sklearn.datasets import load_files
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 
-from aistudio.data.meta.module_utils import ModuleMeta
+from aistudio.data.meta.module_utils import instantiate, resolve_spec
 from aistudio.model.model_utils import persist_ml_model
 from aistudio.serialization.report import JSNode
 
@@ -78,11 +78,6 @@ CONFIG = {
 }
 
 
-def resolve(spec: dict):
-    """Turns a {module, object, subObject?} spec into the object it names."""
-    return ModuleMeta(spec['module'], spec['object'], spec.get('subObject')).caller
-
-
 def main(config: dict = CONFIG) -> JSNode:
     report = JSNode(title=os.path.basename(__file__), config=config)
 
@@ -94,20 +89,19 @@ def main(config: dict = CONFIG) -> JSNode:
 
     # cleanse
     cleanse = config['cleanse']
-    docs = resolve(cleanse['char_cleaner_function'])(data=X)
-    stemmer_spec = cleanse['stemmer_or_lemmatizer_instance']
-    stemmer = resolve(stemmer_spec)(**stemmer_spec.get('hyper_params', {}))
-    docs = resolve(cleanse['stemming_lemmatization_function'])(
+    docs = resolve_spec(cleanse['char_cleaner_function'])(data=X)
+    stemmer = instantiate(cleanse['stemmer_or_lemmatizer_instance'])
+    docs = resolve_spec(cleanse['stemming_lemmatization_function'])(
         stem_or_lemmatizer=stemmer, data=docs)
 
     # prepare
     prepare = config['prepare']
     vectorizer_spec = prepare['vectorizer_instance']
-    stop_words = sorted(resolve(vectorizer_spec['stop_words']))
-    vectorizer = resolve(vectorizer_spec)(**vectorizer_spec['hyper_params'],
-                                          stop_words=stop_words)
+    stop_words = sorted(resolve_spec(vectorizer_spec['stop_words']))
+    vectorizer = resolve_spec(vectorizer_spec)(**vectorizer_spec['hyper_params'],
+                                               stop_words=stop_words)
     counts = vectorizer.fit_transform(docs).toarray()
-    transformed = resolve(prepare['transformer_instance'])().fit_transform(counts).toarray()
+    transformed = instantiate(prepare['transformer_instance']).fit_transform(counts).toarray()
 
     X_train, X_test, y_train, y_test = train_test_split(
         transformed, y,
@@ -117,7 +111,7 @@ def main(config: dict = CONFIG) -> JSNode:
 
     # execute
     model_spec = config['execute']['model_instance']
-    model = resolve(model_spec)(**model_spec['hyper_params'])
+    model = instantiate(model_spec)
     model.fit(X_train, y_train)
 
     # report
