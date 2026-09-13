@@ -109,11 +109,15 @@ CONFIG = {
             'fit': FIT,
         },
         'VGG16Transfer': {
-            # VGG16 was trained on unscaled pixels, so this one gets no Rescaling
             'base_model': {'module': 'tensorflow.keras.applications', 'object': 'VGG16',
                            'hyper_params': {'weights': 'imagenet', 'include_top': False,
                                             'input_shape': (64, 64, 3)}},
             'base_layer': 'block3_pool',
+            # the pretrained weights are kept as they are: training them at the
+            # rate the new head needs is what destroys them
+            'base_trainable': False,
+            # VGG16 wants BGR with the ImageNet means removed, not 0-1 pixels
+            'input_layers': [{'module': 'preprocessing', 'object': 'VGGPreprocessing'}],
             'layers': [
                 {'module': LAYERS, 'object': 'Flatten'},
                 {'module': LAYERS, 'object': 'Dense',
