@@ -1,191 +1,139 @@
+"""Classify BBC news articles with a pipeline that is declared, not hard coded.
+
+Every step of the pipeline - the cleaners, the lemmatizer, the vectorizer, the
+model - is named in CONFIG as a module and object pair, and resolved at run time
+by aistudio.data.meta.module_utils. Swapping the model or the vectorizer is an
+edit to CONFIG, not to the code below.
+
+The run is summarised in a JSNode report which is written next to the trained
+model as report.json.
+
+Before running, fetch the corpus:
+
+    python download_data.py
+
+Then, from this directory:
+
+    python run_pipeline.py
+"""
 import os
-from sklearn.datasets import  load_files
-import numpy as np
+from pathlib import Path
+
 import nltk
-nltk.download('stopwords')
-nltk.download('wordnet')
-from aistudio.model.model_utils import persist_ml_model
-from exchelp.exception_helper import ReportObject, CoverException
-from aistudio.data.meta.module_utils import ModuleMeta,object_from_module
-
-
-#
-############## Model Parameters ##################
-#
-main_report = ReportObject().adddata('_title_',os.path.basename(__file__)).\
-    adddata('initialize_info',ReportObject().\
-        adddata('source',r"examples/bbc4-articles/data/raw/bbc4").\
-        adddata('extension','.txt').\
-        adddata('type','text-document')
-    ).\
-    adddata('cleanse_info',ReportObject().\
-        adddata('char_cleaner_function',ReportObject().\
-            adddata('module','aistudio.data.text_utils').\
-            adddata('object','clear_default_chars')
-
-        ).\
-        adddata('stemming_lemmatization_function',ReportObject().\
-            adddata('module','aistudio.data.text_utils').\
-            adddata('object','stemming_lematization')
-        ).\
-        adddata('stemmer_or_lemmatizer_instance',ReportObject().\
-                adddata('module','nltk.stem').\
-                adddata('object','WordNetLemmatizer')
-            )
-    ).\
-    adddata('prepare_info',ReportObject().\
-        adddata('vectorizer_instance',ReportObject().\
-            adddata('module','sklearn.feature_extraction.text').\
-            adddata('object','CountVectorizer').\
-            adddata('hyper_params',ReportObject().\
-                adddata('max_features',1500).\
-                adddata('min_df',5).\
-                adddata('max_df',0.7)
-            ).\
-            adddata('stop_words_function',ReportObject().\
-                    adddata('module','nltk.corpus').\
-                    adddata('object','stopwords').\
-                    adddata('subObject','words')
-            ).\
-            adddata('language','english')
-        ).\
-        adddata('transformer_instance',ReportObject().\
-            adddata('module','sklearn.feature_extraction.text').\
-            adddata('object','TfidfTransformer')
-        ).\
-        adddata('test_size',0.2).\
-        adddata('random_state',0)
-    ).\
-    adddata('execute_info',ReportObject().\
-        adddata('model_instance',ReportObject().\
-            adddata('module','sklearn.ensemble').
-            adddata('object','RandomForestClassifier').\
-            adddata('hyper_params',ReportObject().\
-                adddata('n_estimators',500).\
-                adddata('random_state',0)
-            )
-        )
-    )
-#
-#################################################################################
-#
-
-#
-# Initialize
-#
-data_source = main_report.getdata('initialize_info')['source']
-try:
-    movie_data = load_files(data_source)
-except Exception as e:
-    CoverException('data load failed',e,logIt=True,dontThrow=True,shouldExit=True).act()
-    
-X, y = np.array(movie_data.data), np.array(movie_data.target)
-
-main_report.getdata('initialize_info')['raw_number']=len(X)
-
-#
-# Cleanse
-#
-
-#char cleaning
-  
-  
-caller = ModuleMeta(
-moduleName=main_report.getdata('cleanse_info')['char_cleaner_function']['module'],
-objectName = main_report.getdata('cleanse_info')['char_cleaner_function']['object']).caller
-
-docs = caller(data=X)
-#moduleName = main_report.getdata('cleanse_info')['char_cleaner_function']['module']
-#objectName = main_report.getdata('cleanse_info')['char_cleaner_function']['object']
-
-
-#docs = object_from_module(moduleName=moduleName,objectName=objectName)()
-
-#stemming-lemmatization cleaning
-
-stem_or_lemmatizer_instance = ModuleMeta(main_report.getdata('cleanse_info')['stemmer_or_lemmatizer_instance']['module'],main_report.getdata('cleanse_info')['stemmer_or_lemmatizer_instance']['object']).caller()
-
-#stem_or_lemmatizer_instance = object_from_module(moduleName=moduleName,objectName=objectName)()
-
-stemming_lemmatization_function = ModuleMeta(
-moduleName = main_report.getdata('cleanse_info')['stemming_lemmatization_function']['module'],
-objectName = main_report.getdata('cleanse_info')['stemming_lemmatization_function']['object']).caller
-
-docs = stemming_lemmatization_function(stem_or_lemmatizer=stem_or_lemmatizer_instance,data=X)
-
-#
-# Prepare
-#
-
-#   stopwords
-stop_words_language = main_report.getdata('prepare_info')['vectorizer_instance']['language']
-
-stop_words_function = ModuleMeta(
-moduleName = main_report.getdata('prepare_info')['vectorizer_instance']['stop_words_function']['module'],
-objectName = main_report.getdata('prepare_info')['vectorizer_instance']['stop_words_function']['object'],
-subObjectName = main_report.getdata('prepare_info')['vectorizer_instance']['stop_words_function']['subObject']
-).caller
-
-
-stop_words = stop_words_function(stop_words_language)
-
-#   vectorizer
-vectorizer_instance_params = main_report.getdata('prepare_info')['vectorizer_instance']['hyper_params']
-
-vectorizer_instance = ModuleMeta(
-moduleName = main_report.getdata('prepare_info')['vectorizer_instance']['module'],
-objectName = main_report.getdata('prepare_info')['vectorizer_instance']['object']
-).caller
-
-vectorizer_instance = vectorizer_instance(**vectorizer_instance_params,stop_words = stop_words)
-vectorized_count = vectorizer_instance.fit_transform(docs).toarray()
-
-#   transformer
-transformer_instance = ModuleMeta(
-moduleName = main_report.getdata('prepare_info')['transformer_instance']['module'],
-objectName = main_report.getdata('prepare_info')['transformer_instance']['object']
-).caller()
-
-transformed_vector = transformer_instance.fit_transform(vectorized_count).toarray()
-
-test_size = objectName = main_report.getdata('prepare_info')['test_size']
-random_state = objectName = main_report.getdata('prepare_info')['random_state']
-from sklearn.model_selection import train_test_split
-X_train, X_test, y_train, y_test = train_test_split(transformed_vector, y, test_size=test_size, random_state=random_state)
-
-
-#
-# Execute
-#
-model_instance_parameters = main_report.getdata('execute_info')['model_instance']['hyper_params']
-
-model_instance = ModuleMeta(
-moduleName = main_report.getdata('execute_info')['model_instance']['module'],
-objectName = main_report.getdata('execute_info')['model_instance']['object']
-).caller
-
-model_instance = model_instance(**model_instance_parameters)
-model_instance.fit(X_train, y_train)
-
-#
-# Reportize
-#
+import numpy as np
+from sklearn.datasets import load_files
 from sklearn.metrics import classification_report
-y_pred = model_instance.predict(X_test)
-target_names = ['business', 'entertainment', 'politics','sport','tech']
-classification_performance = classification_report(y_test, y_pred, target_names=target_names,output_dict=True)
-print(classification_report(y_test, y_pred, target_names=target_names))
+from sklearn.model_selection import train_test_split
+
+from aistudio.data.meta.module_utils import ModuleMeta
+from aistudio.model.model_utils import persist_ml_model
+from aistudio.serialization.report import JSNode
+
+HERE = Path(__file__).parent
+
+CONFIG = {
+    'initialize': {
+        'source': str(HERE / 'data' / 'raw' / 'bbc'),
+        'extension': '.txt',
+        'type': 'text-document',
+    },
+    'cleanse': {
+        'char_cleaner_function': {
+            'module': 'aistudio.data.text_utils',
+            'object': 'clear_default_chars',
+        },
+        'stemming_lemmatization_function': {
+            'module': 'aistudio.data.text_utils',
+            'object': 'stemming_lematization',
+        },
+        'stemmer_or_lemmatizer_instance': {
+            'module': 'nltk.stem',
+            'object': 'WordNetLemmatizer',
+        },
+    },
+    'prepare': {
+        'vectorizer_instance': {
+            'module': 'sklearn.feature_extraction.text',
+            'object': 'CountVectorizer',
+            'hyper_params': {'max_features': 1500, 'min_df': 5, 'max_df': 0.7},
+            'stop_words_function': {
+                'module': 'nltk.corpus',
+                'object': 'stopwords',
+                'subObject': 'words',
+            },
+            'language': 'english',
+        },
+        'transformer_instance': {
+            'module': 'sklearn.feature_extraction.text',
+            'object': 'TfidfTransformer',
+        },
+        'test_size': 0.2,
+        'random_state': 0,
+    },
+    'execute': {
+        'model_instance': {
+            'module': 'sklearn.ensemble',
+            'object': 'RandomForestClassifier',
+            'hyper_params': {'n_estimators': 500, 'random_state': 0},
+        },
+    },
+}
 
 
-model_name = main_report.getdata('execute_info')['model_instance']['object']+'.sav'
-run_title = main_report.getdata('_title_')
-
-main_report.adddata('metric_info',ReportObject().\
-    adddata('model_name',model_name).\
-    adddata('target_names',target_names).\
-    adddata('summary',classification_performance)
-    )
-
-persist_ml_model(modelName=model_name,trainedModel = model_instance,runTitle=run_title,mainReport=main_report)
+def resolve(spec: dict):
+    """Turns a {module, object, subObject?} spec into the object it names."""
+    return ModuleMeta(spec['module'], spec['object'], spec.get('subObject')).caller
 
 
+def main(config: dict = CONFIG) -> JSNode:
+    report = JSNode(title=os.path.basename(__file__), config=config)
+
+    # initialize
+    corpus = load_files(config['initialize']['source'])
+    X, y = np.array(corpus.data), np.array(corpus.target)
+    target_names = list(corpus.target_names)
+    report.update(document_count=len(X), target_names=target_names)
+
+    # cleanse
+    cleanse = config['cleanse']
+    docs = resolve(cleanse['char_cleaner_function'])(data=X)
+    lemmatizer = resolve(cleanse['stemmer_or_lemmatizer_instance'])()
+    docs = resolve(cleanse['stemming_lemmatization_function'])(
+        stem_or_lemmatizer=lemmatizer, data=docs)
+
+    # prepare
+    prepare = config['prepare']
+    vectorizer_spec = prepare['vectorizer_instance']
+    stop_words = resolve(vectorizer_spec['stop_words_function'])(vectorizer_spec['language'])
+    vectorizer = resolve(vectorizer_spec)(**vectorizer_spec['hyper_params'],
+                                          stop_words=stop_words)
+    counts = vectorizer.fit_transform(docs).toarray()
+    transformed = resolve(prepare['transformer_instance'])().fit_transform(counts).toarray()
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        transformed, y,
+        test_size=prepare['test_size'], random_state=prepare['random_state'])
+    report.update(train_size=len(X_train), test_size=len(X_test),
+                  feature_count=transformed.shape[1])
+
+    # execute
+    model_spec = config['execute']['model_instance']
+    model = resolve(model_spec)(**model_spec['hyper_params'])
+    model.fit(X_train, y_train)
+
+    # report
+    y_pred = model.predict(X_test)
+    print(classification_report(y_test, y_pred, target_names=target_names))
+    report.update(metrics=classification_report(
+        y_test, y_pred, target_names=target_names, output_dict=True))
+
+    model_name = model_spec['object'] + '.sav'
+    persist_ml_model(modelName=model_name, trainedModel=model,
+                     runTitle=report.get_property('title'), mainReport=report)
+    return report
+
+
+if __name__ == '__main__':
+    nltk.download('stopwords')
+    nltk.download('wordnet')
+    main()
