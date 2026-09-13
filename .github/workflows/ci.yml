@@ -54,7 +54,7 @@ jobs:
         run: python -c "import run_pipeline"
 
   tensorflow:
-    name: keras helpers with the tf extra
+    name: keras helpers and the malaria example
     runs-on: ubuntu-latest
 
     steps:
@@ -65,13 +65,22 @@ jobs:
           python-version: '3.12'
           cache: pip
 
-      - name: Install the package with the tf extra
-        run: python -m pip install --upgrade pip && python -m pip install -e .[dev,tf]
+      - name: Install the dev extra
+        run: python -m pip install --upgrade pip && python -m pip install -e .[dev]
 
-      # the keras tests skip themselves without tensorflow, so a broken extra
-      # would leave this job green while testing nothing
-      - name: Check the extra actually installed
-        run: python -c "import tensorflow"
+      # the malaria example's pinned stack brings tensorflow, matplotlib and
+      # scikit-learn, which is what its tests need - and resolving those pins
+      # here is the only place they are checked. Not at the supported floor, as
+      # the bbc example's are: this stack is too heavy to install twice
+      - name: Install the malaria example's pinned stack
+        working-directory: examples/malaria-detection
+        run: python -m pip install -r requirements.txt
+
+      # both the keras tests and the example's config tests skip themselves
+      # when these are missing, so a broken install would leave this job green
+      # while testing nothing
+      - name: Check the stack actually installed
+        run: python -c "import tensorflow, matplotlib, sklearn"
 
       - name: Test
         run: pytest
