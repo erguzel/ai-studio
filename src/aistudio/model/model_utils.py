@@ -8,6 +8,25 @@ from aistudio.common.log import logger
 from aistudio.serialization.report import JSNode
 
 
+def save_model(trainedModel, path: str) -> None:
+    """Writes a trained model to the given path, in whatever format it owns.
+
+    Frameworks that carry their own serialization - keras above all, whose
+    graphs and weights do not survive a pickle - expose a ``save(path)``. Those
+    are saved through it, and everything else, sklearn estimators included, is
+    pickled with joblib.
+
+    Args:
+        trainedModel: the trained model object.
+        path (str): file to write to.
+    """
+    saver = getattr(trainedModel, 'save', None)
+    if callable(saver):
+        saver(path)
+    else:
+        dump(trainedModel, path)
+
+
 def persist_ml_model(
     modelName:str,
     trainedModel,
@@ -24,8 +43,12 @@ def persist_ml_model(
     ``-3``, ... suffix so no run overwrites another's report.
 
     Args:
-        modelName (str): file name to store the model under.
-        trainedModel: the trained model object, persisted with joblib.
+        modelName (str): file name to store the model under. Give it the
+            extension the model's own format expects - ``.keras`` for a keras
+            model, say.
+        trainedModel: the trained model object. A model that knows how to
+            persist itself, as keras models do, is saved through its own
+            ``save(path)``; anything else is pickled with joblib.
         runTitle (str): the executing file, used to name the output folder.
         resultDir (str, optional): root to write under. Defaults to the
             current working directory.
@@ -50,7 +73,7 @@ def persist_ml_model(
         except FileExistsError:
             attempt += 1
 
-    dump(trainedModel, os.path.join(model_dir, modelName))
+    save_model(trainedModel, os.path.join(model_dir, modelName))
 
     if mainReport is not None:
         with open(os.path.join(model_dir, 'report.json'), 'w') as f:
