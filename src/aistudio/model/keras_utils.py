@@ -22,6 +22,7 @@ model to build on top of. That is the whole vocabulary::
         },
     }
 """
+import numpy as np
 import tensorflow as tf
 
 from aistudio.data.meta.module_utils import instantiate
@@ -116,3 +117,26 @@ def fit_params(spec: dict) -> dict:
         dict: the keyword arguments to hand to ``model.fit``.
     """
     return instantiate(spec.get('fit', {}))
+
+
+def true_and_predicted(model, dataset):
+    """Runs a model over a dataset and returns the labels next to its guesses.
+
+    Both come out of the same pass over the dataset, batch by batch, because a
+    dataset need not hand out its elements in the same order twice - keras
+    shuffles by default, and reshuffles on every iteration. Collecting the
+    labels in one pass and the predictions in another would pair each
+    prediction with some other image's label, and score any model at chance.
+
+    Args:
+        model: a trained keras model.
+        dataset: a batched dataset of inputs and one hot labels.
+
+    Returns:
+        tuple: two arrays of class indices, the true ones and the predicted.
+    """
+    true, predicted = [], []
+    for inputs, labels in dataset:
+        true.append(np.argmax(labels, axis=1))
+        predicted.append(np.argmax(model.predict(inputs, verbose=0), axis=1))
+    return np.concatenate(true), np.concatenate(predicted)
