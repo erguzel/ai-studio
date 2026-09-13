@@ -8,7 +8,7 @@ import sys
 
 from loguru import logger
 
-__all__ = ["logger", "configure"]
+__all__ = ["configure", "logger"]
 
 
 def configure(sink=sys.stderr, level="INFO", serialize=False, diagnose=False):

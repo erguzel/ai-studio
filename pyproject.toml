@@ -29,7 +29,17 @@ classifiers = [
 [project.optional-dependencies]
 dev = [
    'pytest>=7',
+   'ruff>=0.6',
 ]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["aistudio", "run_pipeline"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

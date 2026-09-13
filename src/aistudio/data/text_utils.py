@@ -33,7 +33,8 @@ def stemming_lematization(stem_or_lemmatizer, data: np.ndarray) -> np.ndarray:
             f'and {type(stem_or_lemmatizer).__name__} exposes neither'
         )
 
-    reduce_text = lambda k: ' '.join(reduce_token(token) for token in str(k).split())
+    def reduce_text(k):
+        return ' '.join(reduce_token(token) for token in str(k).split())
 
     return np.vectorize(reduce_text)(data)
     #
@@ -58,28 +59,16 @@ def clear_default_chars(
     if not isinstance(data, np.ndarray):
         raise TypeError(f'data has to be an ndarray, not {type(data).__name__}')
     #remove special characters
-    removeSpecials = lambda k : re.sub(r'\W', ' ', str(k))
-    rsp = np.vectorize(removeSpecials)
-    data = rsp(data)
+    data = np.vectorize(lambda k: re.sub(r'\W', ' ', str(k)))(data)
     #remove single characters
-    removeSingleCharacters = lambda k : re.sub(r'\s+[a-zA-Z]\s+', ' ', str(k))
-    rsc = np.vectorize(removeSingleCharacters)
-    data = rsc(data)
+    data = np.vectorize(lambda k: re.sub(r'\s+[a-zA-Z]\s+', ' ', str(k)))(data)
     #remove multiple spaces
-    removeMultiSpaces = lambda k : re.sub(r'\s+', ' ', str(k), flags=re.I)
-    rmsp = np.vectorize(removeMultiSpaces)
-    data = rmsp(data)
+    data = np.vectorize(lambda k: re.sub(r'\s+', ' ', str(k), flags=re.I))(data)
     #remove byte prefix
-    removingBytePrefix = lambda k : re.sub(r'^b\s+', '', str(k))
-    rbtpfx = np.vectorize(removingBytePrefix)
-    data = rbtpfx(data)
+    data = np.vectorize(lambda k: re.sub(r'^b\s+', '', str(k)))(data)
     #lower case
-    lowerCase = lambda k: str(k).lower()
-    lcs = np.vectorize(lowerCase)
-    data = lcs(data)
+    data = np.vectorize(lambda k: str(k).lower())(data)
     #trim text
-    stripText = lambda k: str(k).strip()
-    stx = np.vectorize(stripText)
-    data = stx(data)
+    data = np.vectorize(lambda k: str(k).strip())(data)
 
     return data
