@@ -1,5 +1,5 @@
 
-class argsbase(object):
+class argsbase:
     def __init__(self) -> None:
         pass
 
@@ -20,21 +20,15 @@ class argsbase(object):
         len(self.kwargs) if isinstance(self,dictargs) else len(self.args)
     #override
     def __contains__(self,item):
-        if isinstance(self, dictargs):        
-                if item in self.kwargs:
-                    return True
-        if isinstance(self,tuplargs):
-                if item in self.args:
-                    return True
-        return False
+        if isinstance(self, dictargs) and item in self.kwargs:
+            return True
+        return isinstance(self,tuplargs) and item in self.args
     def isin(self, *keyorelms):
         
         res = []
         lenkeyorelms = len(keyorelms)
         for keyorelm in keyorelms:
-            if(self.__contains__(keyorelm)):
-                res.append(True)
-            else: res.append(False)
+            res.append(self.__contains__(keyorelm))
 
         return tuple(res) if lenkeyorelms >1 else res[0]
 
@@ -74,9 +68,9 @@ class dictargs(argsbase):
         if nonsafe:
              for i in range(len(keys)):
                 if keys[i] in self.kwargs:
-                    v = self.kwargs.pop(keys[i])
-                    res.append(v)  
-                else: res.append(None)
+                    res.append(self.kwargs.pop(keys[i]))
+                else:
+                    res.append(None)
         else:
              for i in range(len(keys)):
                 v = self.kwargs.pop(keys[i])

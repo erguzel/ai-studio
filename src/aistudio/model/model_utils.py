@@ -8,7 +8,13 @@ from aistudio.common.log import logger
 from aistudio.serialization.report import JSNode
 
 
-def persist_ml_model(modelName:str,trainedModel,runTitle:str,resultDir:str=None,mainReport:JSNode=None):
+def persist_ml_model(
+    modelName:str,
+    trainedModel,
+    runTitle:str,
+    resultDir:str|None=None,
+    mainReport:JSNode|None=None,
+):
     """Persists a trained ML model to the disk, next to its run report.
 
     The model is written to
@@ -36,7 +42,7 @@ def persist_ml_model(modelName:str,trainedModel,runTitle:str,resultDir:str=None,
 
     attempt = 0
     while True:
-        suffix = '' if attempt == 0 else '-{}'.format(attempt + 1)
+        suffix = '' if attempt == 0 else f'-{attempt + 1}'
         model_dir = os.path.join(run_root, stamp + suffix)
         try:
             Path(model_dir).mkdir(parents=True, exist_ok=False)
