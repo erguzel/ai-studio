@@ -10,6 +10,7 @@ from aistudio.model.keras_utils import (  # noqa: E402
     build_sequential_model,
     build_transfer_model,
     fit_params,
+    true_and_predicted,
 )
 
 LAYERS = [
@@ -130,3 +131,48 @@ def test_a_built_model_survives_being_saved(tmp_path, dataset):
     reloaded = tf.keras.models.load_model(path)
 
     assert np.allclose(model.predict(images, verbose=0), reloaded.predict(images, verbose=0))
+
+
+class BrightnessModel:
+    """A model that is right about every image, by construction.
+
+    It reads the image rather than a learned weight, so any disagreement
+    between its guesses and the labels can only come from the pairing.
+    """
+
+    def predict(self, inputs, verbose=0):
+        bright = np.mean(np.asarray(inputs), axis=(1, 2, 3)) > 0.5
+        return np.stack([~bright, bright], axis=1).astype('float32')
+
+
+def reshuffling_dataset(size: int = 64, batch: int = 8):
+    """A dataset that hands out its elements in a different order every pass."""
+    values = np.repeat([0.2, 0.8], size // 2).astype('float32')
+    images = values.reshape(-1, 1, 1, 1) * np.ones((size, 4, 4, 3), dtype='float32')
+    labels = tf.keras.utils.to_categorical((values > 0.5).astype(int), 2)
+
+    dataset = tf.data.Dataset.from_tensor_slices((images, labels))
+    return dataset.shuffle(size, seed=0, reshuffle_each_iteration=True).batch(batch)
+
+
+def test_the_dataset_this_is_tested_against_really_does_reshuffle():
+    dataset = reshuffling_dataset()
+
+    first = np.concatenate([np.argmax(labels, axis=1) for _, labels in dataset])
+    second = np.concatenate([np.argmax(labels, axis=1) for _, labels in dataset])
+
+    assert not np.array_equal(first, second)
+
+
+def test_predictions_are_paired_with_their_own_labels():
+    """Two passes over a shuffled dataset would score this perfect model at chance."""
+    true, predicted = true_and_predicted(BrightnessModel(), reshuffling_dataset())
+
+    assert np.array_equal(true, predicted)
+
+
+def test_true_and_predicted_cover_the_whole_dataset():
+    true, predicted = true_and_predicted(BrightnessModel(), reshuffling_dataset(size=64))
+
+    assert len(true) == 64
+    assert len(predicted) == 64
