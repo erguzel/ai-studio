@@ -13,7 +13,9 @@ def persist_ml_model(modelName:str,trainedModel,runTitle:str,resultDir:str=None,
 
     The model is written to
     ``<resultDir>/models/<runTitle>/<timestamp>/<modelName>`` and, when a
-    report is given, ``report.json`` is written beside it.
+    report is given, ``report.json`` is written beside it. The run folder is
+    always freshly created; runs landing on the same timestamp get a ``-2``,
+    ``-3``, ... suffix so no run overwrites another's report.
 
     Args:
         modelName (str): file name to store the model under.
@@ -26,12 +28,21 @@ def persist_ml_model(modelName:str,trainedModel,runTitle:str,resultDir:str=None,
     Returns:
         str: the directory the model and report were written to.
     """
-    current_datetime = datetime.now().strftime("_%d-%b-%Y_%H_%M_%S")
-    model_dir = os.path.join(
+    run_root = os.path.join(
         os.getcwd() if resultDir is None else resultDir,
-        'models', os.path.basename(runTitle), current_datetime,
+        'models', os.path.basename(runTitle),
     )
-    Path(model_dir).mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now().strftime("_%d-%b-%Y_%H_%M_%S")
+
+    attempt = 0
+    while True:
+        suffix = '' if attempt == 0 else '-{}'.format(attempt + 1)
+        model_dir = os.path.join(run_root, stamp + suffix)
+        try:
+            Path(model_dir).mkdir(parents=True, exist_ok=False)
+            break
+        except FileExistsError:
+            attempt += 1
 
     dump(trainedModel, os.path.join(model_dir, modelName))
 
