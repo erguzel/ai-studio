@@ -1,0 +1,10 @@
+name: malaria-detection-env
+channels:
+  - defaults
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+    # pins live in requirements.txt; create this env from this directory
+    - -r requirements.txt
+prefix: ./.convenv
