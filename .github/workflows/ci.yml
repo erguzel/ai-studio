@@ -52,3 +52,28 @@ jobs:
       - name: Import the example without running it
         working-directory: examples/bbc-news-classification
         run: python -c "import run_pipeline"
+
+  tensorflow:
+    name: keras helpers with the tf extra
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install the package with the tf extra
+        run: python -m pip install --upgrade pip && python -m pip install -e .[dev,tf]
+
+      # the keras tests skip themselves without tensorflow, so a broken extra
+      # would leave this job green while testing nothing
+      - name: Check the extra actually installed
+        run: python -c "import tensorflow"
+
+      - name: Test
+        run: pytest
+        env:
+          TF_CPP_MIN_LOG_LEVEL: '3'
