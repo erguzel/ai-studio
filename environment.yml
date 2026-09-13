@@ -2,7 +2,7 @@ name: ai-studio-env
 channels:
   - defaults
 dependencies:
-  - python=3.11
+  - python=3.12
   - pip
   - pip:
     # pins live in pyproject.toml; conda files are not read by dependabot
