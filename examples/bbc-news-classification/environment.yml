@@ -1,11 +1,10 @@
-name: ai-studio-env
+name: bbc-news-classification-env
 channels:
   - defaults
 dependencies:
+  - python=3.11
   - pip
   - pip:
-    - nltk==3.10.3
-    - numpy==1.23.5
-    - scikit-learn==1.5.0
-    - ai-studio @ .
+    # pins live in requirements.txt; create this env from this directory
+    - -r requirements.txt
 prefix: ./.convenv
