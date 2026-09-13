@@ -128,6 +128,10 @@ def true_and_predicted(model, dataset):
     labels in one pass and the predictions in another would pair each
     prediction with some other image's label, and score any model at chance.
 
+    The model is called rather than asked to predict, which is what a manual
+    loop wants: predict builds a compiled function per batch shape, and warns
+    about retracing once the last, shorter batch arrives.
+
     Args:
         model: a trained keras model.
         dataset: a batched dataset of inputs and one hot labels.
@@ -138,5 +142,5 @@ def true_and_predicted(model, dataset):
     true, predicted = [], []
     for inputs, labels in dataset:
         true.append(np.argmax(labels, axis=1))
-        predicted.append(np.argmax(model.predict(inputs, verbose=0), axis=1))
+        predicted.append(np.argmax(np.asarray(model(inputs, training=False)), axis=1))
     return np.concatenate(true), np.concatenate(predicted)
