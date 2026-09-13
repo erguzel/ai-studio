@@ -81,6 +81,9 @@ COMPILE = {
 FIT = {
     'epochs': 20,
     'verbose': 2,
+    # the training dataset shuffles itself between epochs; saying so here keeps
+    # keras from warning that it cannot shuffle a dataset on our behalf
+    'shuffle': False,
     'callbacks': [
         {'module': 'tensorflow.keras.callbacks', 'object': 'EarlyStopping',
          'hyper_params': {'monitor': 'val_loss', 'patience': 4,
@@ -119,7 +122,10 @@ CONFIG = {
             # VGG16 wants BGR with the ImageNet means removed, not 0-1 pixels
             'input_layers': [{'module': 'preprocessing', 'object': 'VGGPreprocessing'}],
             'layers': [
-                {'module': LAYERS, 'object': 'Flatten'},
+                # pooling the 8x8 grid rather than flattening it keeps the head
+                # at 1.8M parameters instead of 5.9M; flattening overfits here,
+                # its validation accuracy falling epoch after epoch
+                {'module': LAYERS, 'object': 'GlobalAveragePooling2D'},
                 {'module': LAYERS, 'object': 'Dense',
                  'hyper_params': {'units': 256, 'activation': 'relu'}},
                 {'module': LAYERS, 'object': 'Dropout', 'hyper_params': {'rate': 0.3}},
@@ -321,7 +327,11 @@ def main(config: dict = CONFIG, limit_batches: int | None = None,
 
         loss, accuracy = model.evaluate(test, verbose=0)
         true, predicted = true_and_predicted(model, test)
-        print(classification_report(true, predicted, target_names=class_names))
+        # a model that predicts one class only - an early epoch, or a collapsed
+        # run - leaves the other class with no predictions; report that as a
+        # zero rather than as a warning
+        print(classification_report(true, predicted, target_names=class_names,
+                                    zero_division=0))
 
         summary[name] = {
             'accuracy': float(accuracy),
