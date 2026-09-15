@@ -11,6 +11,11 @@ updates:
     directory: /examples/bbc-news-classification
     schedule:
       interval: weekly
+    ignore:
+      # numpy 2.5 raised its floor to python 3.12; this example's stack is
+      # resolved on 3.11 in CI. drop this once the supported floor moves.
+      - dependency-name: numpy
+        versions: [">=2.5"]
 
   - package-ecosystem: github-actions
     directory: /
