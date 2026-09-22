@@ -31,7 +31,7 @@ classifiers = [
 [project.optional-dependencies]
 dev = [
    'pytest>=7',
-   'ruff==0.16.7',
+   'ruff==0.16.8',
 ]
 ## the keras helpers only; nothing in the package imports tensorflow on its own
 tf = [
